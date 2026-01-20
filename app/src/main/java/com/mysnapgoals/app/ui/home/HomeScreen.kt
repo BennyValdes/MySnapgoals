@@ -52,9 +52,9 @@ fun HomeScreen() {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    LaunchedEffect(Unit) {
-        viewModel.events.collectLatest { event ->
-            when (event) {
+    LaunchedEffect(viewModel) {
+    viewModel.events.collect { event ->
+        when (event) {
                 is HomeEvent.ShowUndoRemovedTodo -> {
                     snackbarHostState.currentSnackbarData?.dismiss()
 

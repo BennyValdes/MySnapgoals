@@ -11,9 +11,11 @@ import com.mysnapgoals.app.data.mapper.toUiModel
 import com.mysnapgoals.app.ui.components.TodayItemType
 import com.mysnapgoals.app.ui.components.TodayItemUiModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -46,8 +48,8 @@ class HomeViewModel(
 
     private val repo = SnapGoalsGraph.tasksRepository
 
-    private val _events = MutableSharedFlow<HomeEvent>(extraBufferCapacity = 1)
-    val events = _events.asSharedFlow()
+    private val _events = Channel<HomeEvent>(capacity = Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
 
     private val removedStack = ArrayDeque<TodayItemUiModel>() // LIFO
     private var confirmTopJob: Job? = null
@@ -57,21 +59,8 @@ class HomeViewModel(
             repo.observeAll().collect { entities ->
                 val e = entities.firstOrNull { it.id == "2" }
                 Log.d("Special SnapGoals", "DB emit id=2 current=${e?.current}")
-                Log.d(
-                    "Special SnapGoals",
-                    "DB raw: " + entities.joinToString(" | ") {
-                        "id=${it.id} type=${it.type} title=${it.title} isDone=${it.isDone} current=${it.current} target=${it.target}"
-                    }
-                )
 
                 val uiModels = entities.map { it.toUiModel() }
-
-                Log.d(
-                    "Special SnapGoals",
-                    "UI mapped: " + uiModels.joinToString(" | ") {
-                        "id=${it.id} type=${it.type} title=${it.title} isDone=${it.isDone} current=${it.current} target=${it.target}"
-                    }
-                )
 
 
                 setState {
@@ -83,7 +72,6 @@ class HomeViewModel(
                             .filter { !it.isDone } // solo pendientes
                             .filter { it.scheduledDay == null || it.scheduledDay == today } // solo "Hoy"
                             .map { it.toUiModel() }
-                            .filterNot { it.id in hiddenIds } // overlay temporal (undo)
                             .toList()
 
                     copy(
@@ -233,7 +221,7 @@ class HomeViewModel(
 
     private fun emitSnackbarForTop() {
         val top = removedStack.lastOrNull() ?: return
-        _events.tryEmit(HomeEvent.ShowUndoRemovedTodo(top))
+        _events.trySend(HomeEvent.ShowUndoRemovedTodo(top))
     }
 
     private fun scheduleTopConfirmation() {
@@ -270,6 +258,7 @@ class HomeViewModel(
                 }
 
                 if (removedStack.isNotEmpty()) {
+                    emitSnackbarForTop()
                     scheduleTopConfirmation()
                 }
             }
