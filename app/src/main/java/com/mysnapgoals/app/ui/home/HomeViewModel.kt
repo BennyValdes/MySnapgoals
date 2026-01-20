@@ -1,8 +1,6 @@
 package com.mysnapgoals.app.ui.home
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import com.airbnb.mvrx.MavericksState
 import com.airbnb.mvrx.MavericksViewModel
 import com.airbnb.mvrx.MavericksViewModelFactory
@@ -132,7 +130,7 @@ class HomeViewModel(
                     type = TaskEntity.TYPE_GOAL,
                     title = title,
                     isDone = false,
-                    scheduledDay = null,
+                    scheduledDay = todayEpochDay(),
                     createdAt = now,
                     updatedAt = now,
                     current = 0,
@@ -166,15 +164,20 @@ class HomeViewModel(
             if (next == current) return@withState
 
 
-            applyGoalIncrement(id = id, nextValue = next)
+            val reachedTarget = next >= target
+            applyGoalIncrement(id = id, nextValue = next, markDone = reachedTarget)
         }
     }
 
-    private fun applyGoalIncrement(id: String, nextValue: Int) {
+    private fun applyGoalIncrement(id: String, nextValue: Int, markDone: Boolean) {
         setState {
             val newAll =
-                allItems.map { ui ->
-                    if (ui.id == id) ui.copy(current = nextValue) else ui
+                if (markDone) {
+                    allItems.filterNot { it.id == id } // ya no debe aparecer en Hoy
+                } else {
+                    allItems.map { ui ->
+                        if (ui.id == id) ui.copy(current = nextValue) else ui
+                    }
                 }
 
             copy(
@@ -190,7 +193,12 @@ class HomeViewModel(
         }
 
         viewModelScope.launch {
-            repo.setCurrent(id = id, current = nextValue, now = System.currentTimeMillis())
+            val now = System.currentTimeMillis()
+            repo.setCurrent(id = id, current = nextValue, now = now)
+
+            if (markDone) {
+                repo.setDone(id = id, isDone = true, now = now)
+            }
         }
     }
 
