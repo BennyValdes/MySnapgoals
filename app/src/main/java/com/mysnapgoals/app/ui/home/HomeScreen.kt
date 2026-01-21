@@ -30,10 +30,10 @@ import com.airbnb.mvrx.compose.mavericksViewModel
 import com.mysnapgoals.app.ui.components.CalendarBanner
 import com.mysnapgoals.app.ui.components.CalendarBannerUiModel
 import com.mysnapgoals.app.ui.components.FilterLine
+import com.mysnapgoals.app.ui.components.PercentageLine
 import com.mysnapgoals.app.ui.components.SnapGoalsTopBar
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +41,9 @@ import kotlinx.coroutines.launch
 fun HomeScreen() {
     val viewModel: HomeViewModel = mavericksViewModel()
     val state by viewModel.collectAsState()
+
+    val statsViewModel: HomeStatsViewModel = mavericksViewModel()
+    val statsState by statsViewModel.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
@@ -158,6 +161,14 @@ fun HomeScreen() {
                     items = state.items,
                     onToggleDone = viewModel::onToggleDone,
                     onIncrementGoal = viewModel::onIncrementGoal
+                )
+            }
+            item {
+                PercentageLine(
+                    dayPercent = statsState.dayPercent,
+                    weekPercent = statsState.weekPercent,
+                    monthPercent = statsState.monthPercent,
+                    yearPercent = statsState.yearPercent
                 )
             }
         }

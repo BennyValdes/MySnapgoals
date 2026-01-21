@@ -1,6 +1,5 @@
 package com.mysnapgoals.app.ui.home
 
-import android.util.Log
 import com.airbnb.mvrx.MavericksState
 import com.airbnb.mvrx.MavericksViewModel
 import com.airbnb.mvrx.MavericksViewModelFactory
@@ -13,8 +12,6 @@ import com.mysnapgoals.app.ui.components.TodayItemUiModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -23,8 +20,8 @@ enum class TaskFilterType { ALL, TODO, GOAL }
 enum class TaskSort { RECENT, ALPHA }
 
 data class HomeState(
-    val allItems: List<TodayItemUiModel> = emptyList(), // source (pendientes desde Room)
-    val items: List<TodayItemUiModel> = emptyList(),    // vista (filtrado)
+    val allItems: List<TodayItemUiModel> = emptyList(),
+    val items: List<TodayItemUiModel> = emptyList(),
     val hiddenIds: Set<String> = emptySet(),
     val query: String = "",
     val filterType: TaskFilterType = TaskFilterType.ALL,
@@ -51,26 +48,20 @@ class HomeViewModel(
     private val _events = Channel<HomeEvent>(capacity = Channel.BUFFERED)
     val events = _events.receiveAsFlow()
 
-    private val removedStack = ArrayDeque<TodayItemUiModel>() // LIFO
+    private val removedStack = ArrayDeque<TodayItemUiModel>()
     private var confirmTopJob: Job? = null
 
     init {
         viewModelScope.launch {
-            repo.observeAll().collect { entities ->
-                val e = entities.firstOrNull { it.id == "2" }
-                Log.d("Special SnapGoals", "DB emit id=2 current=${e?.current}")
-
-                val uiModels = entities.map { it.toUiModel() }
-
-
+            repo.tasksState.collect { entities ->
                 setState {
                     val today = todayEpochDay()
 
                     val source =
                         entities
                             .asSequence()
-                            .filter { !it.isDone } // solo pendientes
-                            .filter { it.scheduledDay == null || it.scheduledDay == today } // solo "Hoy"
+                            .filter { !it.isDone }
+                            .filter { it.scheduledDay == today }
                             .map { it.toUiModel() }
                             .toList()
 
@@ -89,7 +80,6 @@ class HomeViewModel(
         }
     }
 
-    // Luego lo usaremos con AddLine
     fun addTodo(title: String) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
@@ -161,7 +151,7 @@ class HomeViewModel(
         setState {
             val newAll =
                 if (markDone) {
-                    allItems.filterNot { it.id == id } // ya no debe aparecer en Hoy
+                    allItems.filterNot { it.id == id }
                 } else {
                     allItems.map { ui ->
                         if (ui.id == id) ui.copy(current = nextValue) else ui
@@ -191,10 +181,8 @@ class HomeViewModel(
     }
 
     private fun removeTodoWithUndo(todo: TodayItemUiModel) {
-        // Evita dobles taps raros
         if (todo.isDone) return
 
-        // 1) ocultar optimistamente (overlay + lista visible)
         setState {
             val newHidden = hiddenIds + todo.id
             copy(
@@ -209,13 +197,10 @@ class HomeViewModel(
             )
         }
 
-        // 2) push stack
         removedStack.addLast(todo.copy(isDone = true))
 
-        // 3) snackbar para el top actual
         emitSnackbarForTop()
 
-        // 4) ventana de 3s para confirmar el top
         scheduleTopConfirmation()
     }
 
@@ -232,7 +217,6 @@ class HomeViewModel(
             viewModelScope.launch {
                 delay(3_000)
 
-                // Si el top cambió durante la espera, no confirmamos aquí
                 val currentTop = removedStack.lastOrNull()
                 if (currentTop?.id != expectedId) return@launch
 
@@ -246,7 +230,6 @@ class HomeViewModel(
 
                     copy(
                         hiddenIds = newHidden,
-                        // allItems NO se toca aquí; será recalculado por el Flow de Room
                         items = applyFilters(
                             all = allItems,
                             hiddenIds = newHidden,
@@ -268,19 +251,27 @@ class HomeViewModel(
         val top = removedStack.lastOrNull() ?: return
         if (top.id != todoId) return
 
-        // Sacar del stack
         removedStack.removeLast()
 
-        // Cancelar confirmación del top actual
         confirmTopJob?.cancel()
         confirmTopJob = null
 
         setState {
             val newHidden = hiddenIds - todoId
+
+            val needsReinsert = allItems.none { it.id == todoId }
+            val newAll =
+                if (needsReinsert) {
+                    allItems + top.copy(isDone = false)
+                } else {
+                    allItems
+                }
+
             copy(
                 hiddenIds = newHidden,
+                allItems = newAll,
                 items = applyFilters(
-                    all = allItems,
+                    all = newAll,
                     hiddenIds = newHidden,
                     query = query,
                     filterType = filterType,
@@ -289,7 +280,6 @@ class HomeViewModel(
             )
         }
 
-        // Si quedan pendientes, reanudar confirmación del nuevo top
         if (removedStack.isNotEmpty()) {
             emitSnackbarForTop()
             scheduleTopConfirmation()

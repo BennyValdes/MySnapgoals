@@ -4,8 +4,12 @@ import android.content.Context
 import androidx.room.Room
 import com.mysnapgoals.app.data.local.SnapGoalsDatabase
 import com.mysnapgoals.app.data.repository.TasksRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 object SnapGoalsGraph {
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     lateinit var db: SnapGoalsDatabase
         private set
 
@@ -19,6 +23,9 @@ object SnapGoalsGraph {
             "snapgoals.db"
         ).build()
 
-        tasksRepository = TasksRepository(db.taskDao())
+        tasksRepository = TasksRepository(
+            dao = db.taskDao(),
+            appScope = appScope
+        )
     }
 }
