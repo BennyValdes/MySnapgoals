@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.airbnb.mvrx.compose.collectAsState
 import com.airbnb.mvrx.compose.mavericksViewModel
 import com.mysnapgoals.app.ui.components.CalendarBanner
+import com.mysnapgoals.app.ui.components.CalendarBannerViewModel
 import com.mysnapgoals.app.ui.components.FilterLine
 import com.mysnapgoals.app.ui.components.PercentageLine
 import com.mysnapgoals.app.ui.components.SnapGoalsTopBar
@@ -42,6 +43,9 @@ fun HomeScreen() {
 
     val statsViewModel: HomeStatsViewModel = mavericksViewModel()
     val statsState by statsViewModel.collectAsState()
+
+    val calendarViewModel: CalendarBannerViewModel = mavericksViewModel()
+    val calendarState by calendarViewModel.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
@@ -125,7 +129,11 @@ fun HomeScreen() {
                 .padding(innerPadding)
         ) {
             item {
-                CalendarBanner()
+                CalendarBanner(
+                    timeText = calendarState.timeText,
+                    dayOfWeekText = calendarState.dayOfWeekText,
+                    dateText = calendarState.dateText
+                )
             }
             item {
                 AddLine(
