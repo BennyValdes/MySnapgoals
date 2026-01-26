@@ -14,6 +14,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,8 +31,7 @@ fun FilterLine(
         value = query,
         onValueChange = onQueryChanged,
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .fillMaxWidth(),
         singleLine = true,
         label = { Text("Buscar") },
         trailingIcon = {
@@ -55,5 +55,15 @@ fun FilterLine(
             focusedLabelColor = MaterialTheme.colorScheme.outline,
             cursorColor = MaterialTheme.colorScheme.outline
         )
+    )
+}
+
+@Composable
+@Preview(showBackground = true)
+fun FilterLinePreview() {
+    FilterLine(
+        query = "",
+        onQueryChanged = {},
+        onTrailingActionClick = {},
     )
 }

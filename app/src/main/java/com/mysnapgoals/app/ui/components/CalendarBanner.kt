@@ -28,8 +28,7 @@ fun CalendarBanner(
 ) {
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -77,12 +76,11 @@ fun CalendarBanner(
 }
 
 @Composable
-@Preview
+@Preview(showBackground = true)
 fun PreviewCalendarBanner() {
     CalendarBanner(
         timeText= "09:42",
         dayOfWeekText= "Lunes",
-        dateText= "2025/12/31",
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        dateText= "2025/12/31"
     )
 }

@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mysnapgoals.app.ui.components.TodayItem
 import com.mysnapgoals.app.ui.components.TodayItemType
@@ -36,12 +37,10 @@ fun TodayLine(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 14.dp, bottom = 8.dp),
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -67,18 +66,60 @@ fun TodayLine(
             Text(
                 text = "No tienes nada pendiente hoy.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
-                modifier = Modifier.padding(bottom = 8.dp)
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
             )
         } else {
             ordered.forEach { item ->
                 TodayItem(
                     model = item,
                     onToggleDone = onToggleDone,
-                    onIncrement = onIncrementGoal,
-                    modifier = Modifier.padding(vertical = 6.dp)
+                    onIncrement = onIncrementGoal
                 )
             }
         }
     }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun TodayLinePreviewToDo() {
+    TodayLine(
+        items = listOf(TodayItemUiModel(
+            id = "1234",
+            type = TodayItemType.TODO,
+            title = "GoToGym",
+            isDone = false,
+        )),
+        onToggleDone = {},
+        onIncrementGoal = {},
+    )
+}
+
+@Composable
+@Preview(showBackground = true)
+fun TodayLinePreviewGoal() {
+    TodayLine(
+        items = listOf(
+            TodayItemUiModel(
+                id = "1234",
+                type = TodayItemType.GOAL,
+                title = "GoToGym",
+                isDone = false,
+                current = 3,
+                target = 10,
+            )
+        ),
+        onToggleDone = {},
+        onIncrementGoal = {},
+    )
+}
+
+@Composable
+@Preview(showBackground = true)
+fun TodayLinePreviewEmpty() {
+    TodayLine(
+        items = listOf(),
+        onToggleDone = {},
+        onIncrementGoal = {},
+    )
 }

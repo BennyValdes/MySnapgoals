@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mysnapgoals.app.ui.components.TodayItem
 import com.mysnapgoals.app.ui.components.TodayItemType
@@ -32,12 +33,10 @@ fun TotalList(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 8.dp),
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -61,7 +60,6 @@ fun TotalList(
                 text = "No hay elementos para mostrar.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
-                modifier = Modifier.padding(bottom = 8.dp)
             )
         } else {
             ordered.forEach { item ->
@@ -69,9 +67,33 @@ fun TotalList(
                     model = item,
                     onToggleDone = onToggleDone,
                     onIncrement = onIncrementGoal,
-                    modifier = Modifier.padding(vertical = 6.dp)
                 )
             }
         }
     }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun TotalListPreview() {
+    TotalList(
+        items = listOf(
+            TodayItemUiModel(
+                id = "1234",
+                type = TodayItemType.TODO,
+                title = "GoToGym",
+                isDone = false,
+            ),
+            TodayItemUiModel(
+                id = "1234",
+                type = TodayItemType.GOAL,
+                title = "Gym",
+                isDone = false,
+                current = 3,
+                target = 10,
+            )
+        ),
+        onToggleDone = {},
+        onIncrementGoal = {},
+    )
 }
