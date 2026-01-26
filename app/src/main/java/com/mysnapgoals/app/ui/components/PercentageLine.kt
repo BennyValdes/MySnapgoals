@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
 @Composable
 fun PercentageLine(
@@ -106,10 +107,13 @@ private fun PercentCell(
 @Composable
 @Preview(showBackground = true)
 fun PercentageLinePreview() {
-    PercentageLine(
-        dayPercent = 5,
-        weekPercent = 10,
-        monthPercent = 40,
-        yearPercent = 55,
-    )
+    SnapGoalsTheme {
+        PercentageLine(
+            dayPercent = 5,
+            weekPercent = 10,
+            monthPercent = 40,
+            yearPercent = 55,
+        )
+    }
+
 }

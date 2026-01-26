@@ -20,6 +20,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
+import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,4 +111,15 @@ fun AddGoalComponent(
             ) { Text("Cancelar") }
         }
     )
+}
+
+@Composable
+@Preview(showBackground = true)
+fun AddGoalComponentPreview() {
+    SnapGoalsTheme {
+        AddGoalComponent(
+            onDismiss = {},
+            onConfirm = { _, _ -> },
+        )
+    }
 }

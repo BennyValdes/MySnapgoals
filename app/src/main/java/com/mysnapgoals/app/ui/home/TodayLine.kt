@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,10 +11,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.mysnapgoals.app.ui.components.TodayItem
 import com.mysnapgoals.app.ui.components.TodayItemType
 import com.mysnapgoals.app.ui.components.TodayItemUiModel
+import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
 @Composable
 fun TodayLine(
@@ -25,7 +24,6 @@ fun TodayLine(
     modifier: Modifier = Modifier,
     maxItems: Int = 5
 ) {
-    // Orden: TODO primero, luego GOAL
     val ordered =
         items
             .sortedWith(compareBy { it.type != TodayItemType.TODO })
@@ -83,43 +81,49 @@ fun TodayLine(
 @Composable
 @Preview(showBackground = true)
 fun TodayLinePreviewToDo() {
-    TodayLine(
-        items = listOf(TodayItemUiModel(
-            id = "1234",
-            type = TodayItemType.TODO,
-            title = "GoToGym",
-            isDone = false,
-        )),
-        onToggleDone = {},
-        onIncrementGoal = {},
-    )
+    SnapGoalsTheme {
+        TodayLine(
+            items = listOf(TodayItemUiModel(
+                id = "1234",
+                type = TodayItemType.TODO,
+                title = "GoToGym",
+                isDone = false,
+            )),
+            onToggleDone = {},
+            onIncrementGoal = {},
+        )
+    }
 }
 
 @Composable
 @Preview(showBackground = true)
 fun TodayLinePreviewGoal() {
-    TodayLine(
-        items = listOf(
-            TodayItemUiModel(
-                id = "1234",
-                type = TodayItemType.GOAL,
-                title = "GoToGym",
-                isDone = false,
-                current = 3,
-                target = 10,
-            )
-        ),
-        onToggleDone = {},
-        onIncrementGoal = {},
-    )
+    SnapGoalsTheme {
+        TodayLine(
+            items = listOf(
+                TodayItemUiModel(
+                    id = "1234",
+                    type = TodayItemType.GOAL,
+                    title = "GoToGym",
+                    isDone = false,
+                    current = 3,
+                    target = 10,
+                )
+            ),
+            onToggleDone = {},
+            onIncrementGoal = {},
+        )
+    }
 }
 
 @Composable
 @Preview(showBackground = true)
 fun TodayLinePreviewEmpty() {
-    TodayLine(
-        items = listOf(),
-        onToggleDone = {},
-        onIncrementGoal = {},
-    )
+    SnapGoalsTheme {
+        TodayLine(
+            items = listOf(),
+            onToggleDone = {},
+            onIncrementGoal = {},
+        )
+    }
 }

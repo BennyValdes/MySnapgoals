@@ -26,7 +26,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,5 +125,18 @@ private fun RadioRow(
     ) {
         Text(label)
         RadioButton(selected = selected, onClick = onClick)
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun FilterSheetPreview() {
+    SnapGoalsTheme {
+        FilterSheet(
+            initialFilterType = TaskFilterType.TODO,
+            initialSort = TaskSort.RECENT,
+            onApply = {_,_ ->},
+            onClear = {}
+        ) { }
     }
 }

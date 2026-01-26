@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
 @Composable
 fun CalendarBanner(
@@ -78,9 +79,11 @@ fun CalendarBanner(
 @Composable
 @Preview(showBackground = true)
 fun PreviewCalendarBanner() {
-    CalendarBanner(
-        timeText= "09:42",
-        dayOfWeekText= "Lunes",
-        dateText= "2025/12/31"
-    )
+    SnapGoalsTheme {
+        CalendarBanner(
+            timeText= "09:42",
+            dayOfWeekText= "Lunes",
+            dateText= "2025/12/31"
+        )
+    }
 }
