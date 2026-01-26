@@ -30,10 +30,13 @@ class CalendarBannerViewModel(
     }
 
     private val zoneId: ZoneId = ZoneId.systemDefault()
-    private val locale: Locale = Locale("es", "US")
+    private val locale: Locale = Locale.Builder()
+        .setLanguage("es")
+        .setRegion("US")
+        .build()
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", locale)
-    private val dayFormatter = DateTimeFormatter.ofPattern("EEEE", locale)          // lunes, martes...
+    private val dayFormatter = DateTimeFormatter.ofPattern("EEEE", locale)// lunes, martes...
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", locale)
 
     init {
