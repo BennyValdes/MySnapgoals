@@ -11,27 +11,24 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-
-data class CalendarBannerUiModel(
-    val timeText: String,        // "09:42"
-    val dayOfWeekText: String,   // "Lunes"
-    val dateText: String         // "2025/12/31"
-)
+import com.airbnb.mvrx.compose.collectAsState
+import com.airbnb.mvrx.compose.mavericksViewModel
 
 @Composable
 fun CalendarBanner(
-    model: CalendarBannerUiModel,
     modifier: Modifier = Modifier
 ) {
+    val calendarViewModel: CalendarBannerViewModel = mavericksViewModel()
+    val calendarState by calendarViewModel.collectAsState()
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -46,7 +43,7 @@ fun CalendarBanner(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = model.timeText,
+                text = calendarState.timeText,
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -59,7 +56,7 @@ fun CalendarBanner(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = model.dayOfWeekText,
+                    text = calendarState.dayOfWeekText,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -67,7 +64,7 @@ fun CalendarBanner(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = model.dateText,
+                    text = calendarState.dateText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
                     maxLines = 1,
@@ -82,11 +79,6 @@ fun CalendarBanner(
 @Preview
 fun PreviewCalendarBanner() {
     CalendarBanner(
-        model = CalendarBannerUiModel(
-            timeText = "09:42",
-            dayOfWeekText = "Lunes",
-            dateText = "2025/12/31"
-        ),
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
     )
 }

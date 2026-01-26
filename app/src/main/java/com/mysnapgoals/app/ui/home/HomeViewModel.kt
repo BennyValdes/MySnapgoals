@@ -20,8 +20,9 @@ enum class TaskFilterType { ALL, TODO, GOAL }
 enum class TaskSort { RECENT, ALPHA }
 
 data class HomeState(
-    val allItems: List<TodayItemUiModel> = emptyList(),
-    val items: List<TodayItemUiModel> = emptyList(),
+    val todayItems: List<TodayItemUiModel> = emptyList(),          // NO filtrable
+    val totalAllItems: List<TodayItemUiModel> = emptyList(),       // source para TotalList
+    val totalItems: List<TodayItemUiModel> = emptyList(),          // filtrado (TotalList)
     val hiddenIds: Set<String> = emptySet(),
     val query: String = "",
     val filterType: TaskFilterType = TaskFilterType.ALL,
@@ -57,18 +58,27 @@ class HomeViewModel(
                 setState {
                     val today = todayEpochDay()
 
-                    val source =
-                        entities
-                            .asSequence()
+                    val todaySource =
+                        entities.asSequence()
                             .filter { !it.isDone }
                             .filter { it.scheduledDay == today }
                             .map { it.toUiModel() }
+                            .filterNot { it.id in hiddenIds } // respeta undo overlay
+                            .toList()
+
+                    val totalSource =
+                        entities.asSequence()
+                            .filter { !it.isDone }
+                            // si quieres incluir también scheduledDay==null o cualquier día, aquí es donde se define
+                            .map { it.toUiModel() }
+                            .filterNot { it.id in hiddenIds }
                             .toList()
 
                     copy(
-                        allItems = source,
-                        items = applyFilters(
-                            all = source,
+                        todayItems = todaySource,
+                        totalAllItems = totalSource,
+                        totalItems = applyFilters(
+                            all = totalSource,
                             hiddenIds = hiddenIds,
                             query = query,
                             filterType = filterType,
@@ -120,7 +130,9 @@ class HomeViewModel(
 
     fun onToggleDone(id: String) {
         withState { state ->
-            val item = state.allItems.firstOrNull { it.id == id } ?: return@withState
+            val item = state.totalAllItems.firstOrNull { it.id == id }
+                ?: state.todayItems.firstOrNull { it.id == id }
+                ?: return@withState
 
             if (item.type == TodayItemType.TODO) {
                 removeTodoWithUndo(item)
@@ -133,7 +145,9 @@ class HomeViewModel(
 
     fun onIncrementGoal(id: String) {
         withState { st ->
-            val item = st.allItems.firstOrNull { it.id == id } ?: return@withState
+            val item = st.totalAllItems.firstOrNull { it.id == id }
+                ?: st.todayItems.firstOrNull { it.id == id }
+                ?: return@withState
 
             val current = item.current ?: 0
             val target = item.target ?: current
@@ -149,19 +163,19 @@ class HomeViewModel(
 
     private fun applyGoalIncrement(id: String, nextValue: Int, markDone: Boolean) {
         setState {
-            val newAll =
-                if (markDone) {
-                    allItems.filterNot { it.id == id }
-                } else {
-                    allItems.map { ui ->
-                        if (ui.id == id) ui.copy(current = nextValue) else ui
-                    }
-                }
+            val newToday =
+                if (markDone) todayItems.filterNot { it.id == id }
+                else todayItems.map { if (it.id == id) it.copy(current = nextValue) else it }
+
+            val newTotalAll =
+                if (markDone) totalAllItems.filterNot { it.id == id }
+                else totalAllItems.map { if (it.id == id) it.copy(current = nextValue) else it }
 
             copy(
-                allItems = newAll,
-                items = applyFilters(
-                    all = newAll,
+                todayItems = newToday,
+                totalAllItems = newTotalAll,
+                totalItems = applyFilters(
+                    all = newTotalAll,
                     hiddenIds = hiddenIds,
                     query = query,
                     filterType = filterType,
@@ -173,10 +187,7 @@ class HomeViewModel(
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             repo.setCurrent(id = id, current = nextValue, now = now)
-
-            if (markDone) {
-                repo.setDone(id = id, isDone = true, now = now)
-            }
+            if (markDone) repo.setDone(id = id, isDone = true, now = now)
         }
     }
 
@@ -185,10 +196,13 @@ class HomeViewModel(
 
         setState {
             val newHidden = hiddenIds + todo.id
+
             copy(
                 hiddenIds = newHidden,
-                items = applyFilters(
-                    all = allItems,
+                todayItems = todayItems.filterNot { it.id == todo.id },
+                totalAllItems = totalAllItems.filterNot { it.id == todo.id },
+                totalItems = applyFilters(
+                    all = totalAllItems.filterNot { it.id == todo.id },
                     hiddenIds = newHidden,
                     query = query,
                     filterType = filterType,
@@ -198,9 +212,7 @@ class HomeViewModel(
         }
 
         removedStack.addLast(todo.copy(isDone = true))
-
         emitSnackbarForTop()
-
         scheduleTopConfirmation()
     }
 
@@ -223,20 +235,25 @@ class HomeViewModel(
                 val top = removedStack.removeLast()
                 val now = System.currentTimeMillis()
 
+                // Persistimos el done en DB
                 repo.setDone(top.id, true, now)
 
+                // Quitamos el hidden overlay (ya quedó confirmado)
                 setState {
                     val newHidden = hiddenIds - top.id
 
+                    // Nota: aquí NO reinsertamos nada; solo recalculamos totalItems
+                    // totalAllItems ya no contiene el item porque lo removiste optimistamente.
                     copy(
                         hiddenIds = newHidden,
-                        items = applyFilters(
-                            all = allItems,
+                        totalItems = applyFilters(
+                            all = totalAllItems,
                             hiddenIds = newHidden,
                             query = query,
                             filterType = filterType,
                             sort = sort
                         )
+                        // todayItems se reconstruirá por repo.tasksState, no hace falta tocarlo
                     )
                 }
 
@@ -252,31 +269,27 @@ class HomeViewModel(
         if (top.id != todoId) return
 
         removedStack.removeLast()
-
         confirmTopJob?.cancel()
         confirmTopJob = null
 
         setState {
             val newHidden = hiddenIds - todoId
 
-            val needsReinsert = allItems.none { it.id == todoId }
-            val newAll =
-                if (needsReinsert) {
-                    allItems + top.copy(isDone = false)
-                } else {
-                    allItems
-                }
+            val newTotalAll =
+                if (totalAllItems.none { it.id == todoId }) totalAllItems + top.copy(isDone = false)
+                else totalAllItems
 
             copy(
                 hiddenIds = newHidden,
-                allItems = newAll,
-                items = applyFilters(
-                    all = newAll,
+                totalAllItems = newTotalAll,
+                totalItems = applyFilters(
+                    all = newTotalAll,
                     hiddenIds = newHidden,
                     query = query,
                     filterType = filterType,
                     sort = sort
                 )
+                // todayItems NO lo forzamos aquí: lo reconstruye repo.tasksState
             )
         }
 
@@ -290,7 +303,7 @@ class HomeViewModel(
         setState {
             copy(
                 query = value,
-                items = applyFilters(allItems, hiddenIds, value, filterType, sort)
+                totalItems = applyFilters(totalAllItems, hiddenIds, value, filterType, sort)
             )
         }
     }
@@ -330,7 +343,7 @@ class HomeViewModel(
             copy(
                 filterType = type,
                 sort = sort,
-                items = applyFilters(allItems, hiddenIds, query, type, sort)
+                totalItems = applyFilters(totalAllItems, hiddenIds, query, type, sort)
             )
         }
     }

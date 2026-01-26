@@ -24,11 +24,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.airbnb.mvrx.compose.collectAsState
 import com.airbnb.mvrx.compose.mavericksViewModel
 import com.mysnapgoals.app.ui.components.CalendarBanner
-import com.mysnapgoals.app.ui.components.CalendarBannerUiModel
 import com.mysnapgoals.app.ui.components.FilterLine
 import com.mysnapgoals.app.ui.components.PercentageLine
 import com.mysnapgoals.app.ui.components.SnapGoalsTopBar
@@ -127,19 +125,27 @@ fun HomeScreen() {
                 .padding(innerPadding)
         ) {
             item {
-                CalendarBanner(
-                    model = CalendarBannerUiModel(
-                        timeText = "09:42",
-                        dayOfWeekText = "Lunes",
-                        dateText = "2025/12/31"
-                    ),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                )
+                CalendarBanner()
             }
             item {
                 AddLine(
                     onAddGoal = { showAddGoal = true },
                     onAddTodo = { showAddTodo = true }
+                )
+            }
+            item {
+                TodayLine(
+                    items = state.todayItems,
+                    onToggleDone = viewModel::onToggleDone,
+                    onIncrementGoal = viewModel::onIncrementGoal
+                )
+            }
+            item {
+                PercentageLine(
+                    dayPercent = statsState.dayPercent,
+                    weekPercent = statsState.weekPercent,
+                    monthPercent = statsState.monthPercent,
+                    yearPercent = statsState.yearPercent
                 )
             }
             item {
@@ -157,18 +163,10 @@ fun HomeScreen() {
                 )
             }
             item {
-                TodayLine(
-                    items = state.items,
+                TotalList(
+                    items = state.totalItems,
                     onToggleDone = viewModel::onToggleDone,
                     onIncrementGoal = viewModel::onIncrementGoal
-                )
-            }
-            item {
-                PercentageLine(
-                    dayPercent = statsState.dayPercent,
-                    weekPercent = statsState.weekPercent,
-                    monthPercent = statsState.monthPercent,
-                    yearPercent = statsState.yearPercent
                 )
             }
         }
