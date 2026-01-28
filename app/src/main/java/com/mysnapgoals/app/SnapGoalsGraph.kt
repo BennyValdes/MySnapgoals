@@ -2,6 +2,7 @@ package com.mysnapgoals.app
 
 import android.content.Context
 import androidx.room.Room
+import com.mysnapgoals.app.data.local.MIGRATION_1_2
 import com.mysnapgoals.app.data.local.SnapGoalsDatabase
 import com.mysnapgoals.app.data.repository.TasksRepository
 import kotlinx.coroutines.CoroutineScope
@@ -21,10 +22,11 @@ object SnapGoalsGraph {
             context,
             SnapGoalsDatabase::class.java,
             "snapgoals.db"
-        ).build()
+        ).addMigrations(MIGRATION_1_2).build()
 
         tasksRepository = TasksRepository(
             dao = db.taskDao(),
+            goalEventDao = db.goalProgressEventDao(),
             appScope = appScope
         )
     }

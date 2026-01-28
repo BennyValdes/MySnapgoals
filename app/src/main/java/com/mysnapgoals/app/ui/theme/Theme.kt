@@ -1,6 +1,5 @@
 package com.mysnapgoals.app.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,28 +8,62 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Brown,
-    secondary = Beige,
-    tertiary = Brown,
-    background = Brown,
-    surface = Brown
+    background = BlueAbyssal,
+    surface = BlueAbyssal,
+    onSurface = Beige,
+    onBackground = Beige,
+
+    primary = BlueFantastic,
+    onPrimary = Beige,
+    primaryContainer = DarkJungle, // Filter Buttons and Text
+    onPrimaryContainer = Beige,
+
+    secondary = BlueFantastic,
+    onSecondary = Beige,
+    secondaryContainer = DarkJungle,     // Button background
+    onSecondaryContainer = Beige,        // IMPORTANTE
+
+    tertiary = GoldShadow,
+    onTertiary = Beige,
+    tertiaryContainer = GoldShadow,         // IMPORTANTE
+    onTertiaryContainer = Beige,         // IMPORTANTE
+
+    surfaceVariant = DarkJungle,         // Plus button
+    onSurfaceVariant = Beige,            // IMPORTANTE
+
+    outline = Beige,
+    outlineVariant = Beige.copy(alpha = 0.6f)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Beige,
-    secondary = Brown,
-    tertiary = Beige,
     background = Beige,
     surface = Beige,
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F)
+    onSurface = Brown,
+    onBackground = Brown,
+
+    primary = Color3,
+    onPrimary = Brown,
+    primaryContainer = Beige2,
+    onPrimaryContainer = Brown,
+
+    secondary = Color3,
+    onSecondary = Brown,
+    secondaryContainer = Beige2,              // IMPORTANTE
+    onSecondaryContainer = Brown,             // IMPORTANTE
+
+    tertiary = Color4,
+    onTertiary = Brown,
+    tertiaryContainer = Color4,               // IMPORTANTE
+    onTertiaryContainer = Brown,              // IMPORTANTE
+
+    surfaceVariant = Beige2,                  // IMPORTANTE (CalendarBanner/PercentageLine)
+    onSurfaceVariant = Brown,                 // IMPORTANTE
+
+    outline = Brown,
+    outlineVariant = Brown.copy(alpha = 0.5f) // opcional pero recomendado
 )
 
 @Composable

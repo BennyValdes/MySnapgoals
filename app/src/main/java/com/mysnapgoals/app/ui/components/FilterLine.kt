@@ -40,20 +40,7 @@ fun FilterLine(
                     contentDescription = if (showDropdown) "Filtros" else "Buscar"
                 )
             }
-        },
-        colors = OutlinedTextFieldDefaults.colors(
-            // Contenedor: evita que se “coma” el borde por contraste
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-
-            // Borde: define explícitamente ambos estados
-            focusedBorderColor = MaterialTheme.colorScheme.outline,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-
-            // Opcional, pero mejora legibilidad
-            focusedLabelColor = MaterialTheme.colorScheme.outline,
-            cursorColor = MaterialTheme.colorScheme.outline
-        )
+        }
     )
 }
 

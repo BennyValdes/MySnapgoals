@@ -30,9 +30,6 @@ fun PercentageLine(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
@@ -44,26 +41,22 @@ fun PercentageLine(
         ) {
             PercentCell(
                 percentText = "${dayPercent.coerceIn(0, 100)}%",
-                label = "Día",
-                isActive = true
+                label = "Día"
             )
 
             PercentCell(
                 percentText = "${weekPercent.coerceIn(0, 100)}%",
-                label = "Sem",
-                isActive = true
+                label = "Sem"
             )
 
             PercentCell(
                 percentText = "${monthPercent.coerceIn(0, 100)}%",
-                label = "Mes",
-                isActive = true // si aún quieres que esté “muted” visualmente
+                label = "Mes"
             )
 
             PercentCell(
                 percentText = "${yearPercent.coerceIn(0, 100)}%",
-                label = "Año",
-                isActive = true
+                label = "Año"
             )
         }
     }
@@ -72,16 +65,8 @@ fun PercentageLine(
 @Composable
 private fun PercentCell(
     percentText: String,
-    label: String,
-    isActive: Boolean
+    label: String
 ) {
-    val contentColor =
-        if (isActive) {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
-        }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -90,14 +75,12 @@ private fun PercentCell(
             text = percentText,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
-            color = contentColor,
             maxLines = 1,
             overflow = TextOverflow.Clip
         )
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = contentColor,
             maxLines = 1,
             overflow = TextOverflow.Clip
         )

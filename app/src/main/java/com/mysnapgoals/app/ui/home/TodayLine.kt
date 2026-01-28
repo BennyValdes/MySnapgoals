@@ -45,8 +45,7 @@ fun TodayLine(
             Text(
                 text = "Hoy",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                fontWeight = FontWeight.SemiBold
             )
 
             // Contador simple: pendientes/total
@@ -54,7 +53,6 @@ fun TodayLine(
                 Text(
                     text = "$pending/$total",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f),
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -63,8 +61,7 @@ fun TodayLine(
         if (ordered.isEmpty()) {
             Text(
                 text = "No tienes nada pendiente hoy.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                style = MaterialTheme.typography.bodyMedium
             )
         } else {
             ordered.forEach { item ->

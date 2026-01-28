@@ -42,10 +42,6 @@ fun AddLine(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
-            colors = ButtonDefaults.filledTonalButtonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            ),
             contentPadding = ButtonDefaults.ContentPadding
         ) {
             Row(
@@ -73,10 +69,6 @@ fun AddLine(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
-            colors = ButtonDefaults.filledTonalButtonColors(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-            ),
             contentPadding = ButtonDefaults.ContentPadding
         ) {
             Row(

@@ -43,13 +43,11 @@ fun TotalList(
                 text = "Todo",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
                 text = "${items.size}",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f),
                 fontWeight = FontWeight.Medium
             )
         }
@@ -58,7 +56,6 @@ fun TotalList(
             Text(
                 text = "No hay elementos para mostrar.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
             )
         } else {
             ordered.forEach { item ->

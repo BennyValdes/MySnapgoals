@@ -144,4 +144,47 @@ class HomeStatsViewModel(
             .toLocalDate()
             .toEpochDay()
     }
+
+    private fun rangeForWeek(today: Long): LongRange {
+        // hoy es epochDay; semana = últimos 6 días + hoy (7 días)
+        val start = today - 6
+        return start..today
+    }
+
+    private fun rangeForMonth(today: Long): LongRange {
+        val date = java.time.LocalDate.now()
+        val start = date.withDayOfMonth(1).toEpochDay()
+        return start..today
+    }
+
+    private fun rangeForYear(today: Long): LongRange {
+        val date = java.time.LocalDate.now()
+        val start = date.withDayOfYear(1).toEpochDay()
+        return start..today
+    }
+
+    private suspend fun calculatePercentForRange(
+        tasks: List<TaskEntity>,
+        startDay: Long,
+        endDay: Long
+    ): Int {
+        val inRange = tasks.filter { it.scheduledDay != null && it.scheduledDay in startDay..endDay }
+
+        val todos = inRange.filter { it.type == TaskEntity.TYPE_TODO }
+        val goals = inRange.filter { it.type == TaskEntity.TYPE_GOAL }
+
+        val totalTodoUnits = todos.size
+        val doneTodoUnits = todos.count { it.isDone && it.doneAt != null } // o doneAt in range si quieres ultra preciso
+
+        val totalGoalUnits = goals.sumOf { it.target ?: 0 }
+
+        // progreso en rango se basa en events (no en current snapshot)
+        val goalProgressUnits = repo.sumGoalsDeltaBetweenDays(startDay, endDay) // tienes que exponerlo
+
+        val denom = totalTodoUnits + totalGoalUnits
+        if (denom <= 0) return 0
+
+        val numer = doneTodoUnits + goalProgressUnits
+        return ((numer * 100) / denom).coerceIn(0, 100)
+    }
 }

@@ -5,6 +5,7 @@ import com.airbnb.mvrx.MavericksViewModel
 import com.airbnb.mvrx.MavericksViewModelFactory
 import com.airbnb.mvrx.ViewModelContext
 import com.mysnapgoals.app.SnapGoalsGraph
+import com.mysnapgoals.app.data.local.entity.GoalProgressEventEntity
 import com.mysnapgoals.app.data.local.entity.TaskEntity
 import com.mysnapgoals.app.data.mapper.toUiModel
 import com.mysnapgoals.app.ui.components.TodayItemType
@@ -102,6 +103,7 @@ class HomeViewModel(
                     scheduledDay = todayEpochDay(),
                     createdAt = now,
                     updatedAt = now,
+                    doneAt = null,      // ✅ nuevo
                     current = null,
                     target = null
                 )
@@ -121,6 +123,7 @@ class HomeViewModel(
                     scheduledDay = todayEpochDay(),
                     createdAt = now,
                     updatedAt = now,
+                    doneAt = null,      // ✅ nuevo
                     current = 0,
                     target = target
                 )
@@ -186,8 +189,25 @@ class HomeViewModel(
 
         viewModelScope.launch {
             val now = System.currentTimeMillis()
+            val epochDay = java.time.LocalDate.now().toEpochDay()
+
+            // 1) registrar evento (delta = +1 típicamente)
+            repo.insertGoalProgressEvent(
+                GoalProgressEventEntity(
+                    id = UUID.randomUUID().toString(),
+                    goalId = id,
+                    delta = 1,
+                    timestamp = now,
+                    epochDay = epochDay
+                )
+            )
+
+            // 2) actualizar snapshot del goal
             repo.setCurrent(id = id, current = nextValue, now = now)
-            if (markDone) repo.setDone(id = id, isDone = true, now = now)
+
+            if (markDone) {
+                repo.setDone(id = id, isDone = true, now = now) // si agregaste doneAt
+            }
         }
     }
 

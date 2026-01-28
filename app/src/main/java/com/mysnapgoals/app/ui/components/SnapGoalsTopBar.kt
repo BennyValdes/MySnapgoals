@@ -20,10 +20,6 @@ import com.mysnapgoals.app.R
 @Composable
 fun SnapGoalsTopBar(scrollBehavior: TopAppBarScrollBehavior) {
     CenterAlignedTopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.secondary,
-        ),
         title = {
             Text(
                 "SnapGoals",

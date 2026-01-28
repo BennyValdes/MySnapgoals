@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.mysnapgoals.app.data.local.entity.GoalProgressEventEntity
 import com.mysnapgoals.app.data.local.entity.TaskEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -22,8 +23,8 @@ interface TaskDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(tasks: List<TaskEntity>)
 
-    @Query("UPDATE tasks SET isDone = :isDone, updatedAt = :updatedAt WHERE id = :id")
-    suspend fun setDone(id: String, isDone: Boolean, updatedAt: Long)
+    @Query("UPDATE tasks SET isDone = :isDone, updatedAt = :updatedAt, doneAt = :doneAt WHERE id = :id")
+    suspend fun setDone(id: String, isDone: Boolean, updatedAt: Long, doneAt: Long?)
 
     @Query("UPDATE tasks SET `current` = :current, updatedAt = :updatedAt WHERE id = :id")
     suspend fun setCurrent(id: String, current: Int, updatedAt: Long)
