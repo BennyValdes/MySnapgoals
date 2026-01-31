@@ -23,6 +23,7 @@ fun TodayLine(
     onIncrementGoal: (String) -> Unit,
     onDecrementGoal: (String) -> Unit,
     onUncomplete: (String) -> Unit,
+    onItemClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     maxItems: Int = 5
 ) {
@@ -72,7 +73,8 @@ fun TodayLine(
                     onToggleDone = onToggleDone,
                     onIncrement = onIncrementGoal,
                     onDecrement = onDecrementGoal,
-                    onUncomplete = onUncomplete
+                    onUncomplete = onUncomplete,
+                    onItemClick = onItemClick
                 )
             }
         }
@@ -94,6 +96,7 @@ fun TodayLinePreviewToDo() {
             onIncrementGoal = {},
             onDecrementGoal = {},
             onUncomplete = {},
+            onItemClick = {},
         )
     }
 }
@@ -117,6 +120,7 @@ fun TodayLinePreviewGoal() {
             onIncrementGoal = {},
             onDecrementGoal = {},
             onUncomplete = {},
+            onItemClick = {},
         )
     }
 }
@@ -131,6 +135,7 @@ fun TodayLinePreviewEmpty() {
             onIncrementGoal = {},
             onDecrementGoal = {},
             onUncomplete = {},
+            onItemClick = {},
         )
     }
 }

@@ -13,5 +13,8 @@ fun Task.toUiModel(): TodayItemUiModel =
         title = title,
         isDone = isDone,
         current = current,
-        target = target
+        target = target,
+        scheduledDay = scheduledDay,
+        periodicity = periodicity,
+        dueDay = dueDay
     )

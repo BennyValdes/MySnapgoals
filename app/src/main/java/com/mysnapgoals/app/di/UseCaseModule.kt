@@ -4,10 +4,13 @@ import com.mysnapgoals.app.domain.repository.TasksRepository
 import com.mysnapgoals.app.domain.usecase.AddGoalUseCase
 import com.mysnapgoals.app.domain.usecase.AddTodoUseCase
 import com.mysnapgoals.app.domain.usecase.InsertGoalProgressEventUseCase
+import com.mysnapgoals.app.domain.usecase.ObserveGoalProgressEventsUseCase
 import com.mysnapgoals.app.domain.usecase.ObserveTasksUseCase
 import com.mysnapgoals.app.domain.usecase.SetCurrentUseCase
 import com.mysnapgoals.app.domain.usecase.SetDoneUseCase
+import com.mysnapgoals.app.domain.usecase.SumGoalProgressForGoalUseCase
 import com.mysnapgoals.app.domain.usecase.SumGoalProgressUseCase
+import com.mysnapgoals.app.domain.usecase.UpdateTaskUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,6 +24,10 @@ object UseCaseModule {
     @Provides
     @Singleton
     fun provideObserveTasksUseCase(repo: TasksRepository) = ObserveTasksUseCase(repo)
+
+    @Provides
+    @Singleton
+    fun provideObserveGoalProgressEventsUseCase(repo: TasksRepository) = ObserveGoalProgressEventsUseCase(repo)
 
     @Provides
     @Singleton
@@ -45,4 +52,12 @@ object UseCaseModule {
     @Provides
     @Singleton
     fun provideSumGoalProgressUseCase(repo: TasksRepository) = SumGoalProgressUseCase(repo)
+
+    @Provides
+    @Singleton
+    fun provideSumGoalProgressForGoalUseCase(repo: TasksRepository) = SumGoalProgressForGoalUseCase(repo)
+
+    @Provides
+    @Singleton
+    fun provideUpdateTaskUseCase(repo: TasksRepository) = UpdateTaskUseCase(repo)
 }

@@ -28,11 +28,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mysnapgoals.app.domain.model.GoalPeriodicity
 import com.mysnapgoals.app.ui.components.Button3D
-import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -41,13 +39,16 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddGoalComponent(
+fun EditGoalComponent(
+    initialTitle: String,
+    initialPeriodicity: GoalPeriodicity,
+    initialDueDay: Long?,
     onDismiss: () -> Unit,
     onConfirm: (title: String, periodicity: GoalPeriodicity, dueDay: Long) -> Unit
 ) {
-    var title by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf(initialTitle) }
     var titleError by remember { mutableStateOf(false) }
-    var periodicity by remember { mutableStateOf(GoalPeriodicity.DAILY) }
+    var periodicity by remember { mutableStateOf(initialPeriodicity) }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedDueDateMillis by remember { mutableStateOf<Long?>(null) }
@@ -59,11 +60,9 @@ fun AddGoalComponent(
     val zoneId = remember { ZoneId.systemDefault() }
     val dateFormatter = remember { DateTimeFormatter.ofPattern("yyyy/MM/dd") }
     val initialDateMillis =
-        remember {
-            LocalDate.now()
-                .atStartOfDay(zoneId)
-                .toInstant()
-                .toEpochMilli()
+        remember(initialDueDay) {
+            val date = LocalDate.ofEpochDay(initialDueDay ?: LocalDate.now().toEpochDay())
+            date.atStartOfDay(zoneId).toInstant().toEpochMilli()
         }
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDateMillis)
 
@@ -128,7 +127,7 @@ fun AddGoalComponent(
             focusManager.clearFocus()
             onDismiss()
         },
-        title = { Text("Agregar Objetivo") },
+        title = { Text("Editar Objetivo") },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -168,8 +167,12 @@ fun AddGoalComponent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val dateMillis = selectedDueDateMillis ?: initialDueDay?.let { day ->
+                        LocalDate.ofEpochDay(day).atStartOfDay(zoneId).toInstant().toEpochMilli()
+                    }
+
                     val dateText =
-                        selectedDueDateMillis?.let { millis ->
+                        dateMillis?.let { millis ->
                             val date = Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate()
                             date.format(dateFormatter)
                         } ?: "Sin fecha"
@@ -208,8 +211,9 @@ fun AddGoalComponent(
                         titleError = !validTitle
                         if (!validTitle) return@Button3D
 
+                        val dueMillis = selectedDueDateMillis
                         val dueDay =
-                            selectedDueDateMillis?.let { millis ->
+                            dueMillis?.let { millis ->
                                 Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate().toEpochDay()
                             }
 
@@ -246,16 +250,5 @@ private fun PeriodicityRadioRow(
     ) {
         Text(label)
         RadioButton(selected = selected, onClick = onClick)
-    }
-}
-
-@Composable
-@Preview(showBackground = true)
-fun AddGoalComponentPreview() {
-    SnapGoalsTheme {
-        AddGoalComponent(
-            onDismiss = {},
-            onConfirm = { _, _, _ -> }
-        )
     }
 }

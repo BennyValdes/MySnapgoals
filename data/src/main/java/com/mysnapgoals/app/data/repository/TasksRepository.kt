@@ -1,4 +1,4 @@
-package com.mysnapgoals.app.data.repository
+﻿package com.mysnapgoals.app.data.repository
 
 import com.mysnapgoals.app.data.local.dao.GoalProgressEventDao
 import com.mysnapgoals.app.data.local.dao.TaskDao
@@ -51,11 +51,14 @@ class TasksRepositoryImpl(
     override suspend fun insertGoalProgressEvent(event: GoalProgressEvent) =
         goalEventDao.insert(event.toEntity())
 
+    override fun observeGoalProgressEvents(): Flow<List<GoalProgressEvent>> =
+        goalEventDao.observeAll().map { list -> list.map { it.toDomain() } }
+
     // Global (todas las metas)
     override suspend fun sumGoalsDeltaBetweenDays(startDay: Long, endDay: Long): Int =
         goalEventDao.sumDeltaBetweenDays(startDay, endDay)
 
-    // Por goalId (si lo necesitas después)
+    // Por goalId (si lo necesitas despues)
     override suspend fun sumDeltaForGoalBetweenDays(goalId: String, startDay: Long, endDay: Long): Int =
         goalEventDao.sumDeltaForGoalBetweenDays(goalId, startDay, endDay)
 

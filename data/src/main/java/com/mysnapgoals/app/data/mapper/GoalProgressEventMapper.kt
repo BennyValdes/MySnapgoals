@@ -11,3 +11,12 @@ fun GoalProgressEvent.toEntity(): GoalProgressEventEntity =
         timestamp = timestamp,
         epochDay = epochDay
     )
+
+fun GoalProgressEventEntity.toDomain(): GoalProgressEvent =
+    GoalProgressEvent(
+        id = id,
+        goalId = goalId,
+        delta = delta,
+        timestamp = timestamp,
+        epochDay = epochDay
+    )

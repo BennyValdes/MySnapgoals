@@ -5,6 +5,14 @@ enum class TaskType {
     GOAL
 }
 
+enum class GoalPeriodicity(val days: Int) {
+    DAILY(1),
+    WEEKLY(7),
+    MONTHLY(30),
+    SEMESTRAL(180),
+    ANNUAL(365)
+}
+
 data class Task(
     val id: String,
     val type: TaskType,
@@ -15,5 +23,7 @@ data class Task(
     val updatedAt: Long?,
     val current: Int?,
     val target: Int?,
-    val doneAt: Long?
+    val doneAt: Long?,
+    val periodicity: GoalPeriodicity?,
+    val dueDay: Long?
 )

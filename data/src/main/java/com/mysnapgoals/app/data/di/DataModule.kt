@@ -3,6 +3,7 @@ package com.mysnapgoals.app.data.di
 import android.content.Context
 import androidx.room.Room
 import com.mysnapgoals.app.data.local.MIGRATION_1_2
+import com.mysnapgoals.app.data.local.MIGRATION_2_3
 import com.mysnapgoals.app.data.local.SnapGoalsDatabase
 import com.mysnapgoals.app.data.local.dao.GoalProgressEventDao
 import com.mysnapgoals.app.data.local.dao.TaskDao
@@ -35,6 +36,7 @@ object DataModule {
             "snapgoals.db"
         )
             .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_2_3)
             .build()
 
     @Provides

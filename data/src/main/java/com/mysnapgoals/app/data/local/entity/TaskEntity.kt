@@ -15,7 +15,9 @@ data class TaskEntity(
     val updatedAt: Long?, // Solo GOAL (nullable para TODO)
     val current: Int?,
     val target: Int?,
-    val doneAt: Long?
+    val doneAt: Long?,
+    val periodicity: Int?,
+    val dueDay: Long?
 ) {
     companion object {
         const val TYPE_TODO = 0

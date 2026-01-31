@@ -12,7 +12,7 @@ import com.mysnapgoals.app.data.local.entity.TaskEntity
         TaskEntity::class,
         GoalProgressEventEntity::class
     ],
-    version = 2
+    version = 3
 )
 abstract class SnapGoalsDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao

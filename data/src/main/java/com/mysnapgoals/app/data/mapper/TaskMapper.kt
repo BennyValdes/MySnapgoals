@@ -2,6 +2,7 @@ package com.mysnapgoals.app.data.mapper
 
 import com.mysnapgoals.app.data.local.entity.TaskEntity
 import com.mysnapgoals.app.domain.model.Task
+import com.mysnapgoals.app.domain.model.GoalPeriodicity
 import com.mysnapgoals.app.domain.model.TaskType
 
 fun TaskEntity.toDomain(): Task =
@@ -15,7 +16,9 @@ fun TaskEntity.toDomain(): Task =
         updatedAt = updatedAt,
         current = current,
         target = target,
-        doneAt = doneAt
+        doneAt = doneAt,
+        periodicity = periodicity?.let { fromPeriodicityDbValue(it) },
+        dueDay = dueDay
     )
 
 fun Task.toEntity(): TaskEntity =
@@ -29,5 +32,17 @@ fun Task.toEntity(): TaskEntity =
         updatedAt = updatedAt,
         current = current,
         target = target,
-        doneAt = doneAt
+        doneAt = doneAt,
+        periodicity = periodicity?.days,
+        dueDay = dueDay
     )
+
+private fun fromPeriodicityDbValue(value: Int): GoalPeriodicity =
+    when (value) {
+        GoalPeriodicity.DAILY.days -> GoalPeriodicity.DAILY
+        GoalPeriodicity.WEEKLY.days -> GoalPeriodicity.WEEKLY
+        GoalPeriodicity.MONTHLY.days -> GoalPeriodicity.MONTHLY
+        GoalPeriodicity.SEMESTRAL.days -> GoalPeriodicity.SEMESTRAL
+        GoalPeriodicity.ANNUAL.days -> GoalPeriodicity.ANNUAL
+        else -> GoalPeriodicity.MONTHLY
+    }

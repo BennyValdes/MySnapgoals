@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mysnapgoals.app.domain.model.GoalPeriodicity
 import com.mysnapgoals.app.ui.home.components.CalendarBanner
 import com.mysnapgoals.app.ui.home.components.CalendarBannerState
 import com.mysnapgoals.app.ui.home.components.CalendarBannerViewModel
@@ -59,6 +60,7 @@ fun HomeScreen() {
 
     var showAddTodo by rememberSaveable { mutableStateOf(false) }
     var showAddGoal by rememberSaveable { mutableStateOf(false) }
+    var editingItemId by rememberSaveable { mutableStateOf<String?>(null) }
 
     var showFilterSheet by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -134,6 +136,7 @@ fun HomeScreen() {
         showAddTodo = showAddTodo,
         showAddGoal = showAddGoal,
         showFilterSheet = showFilterSheet,
+        editingItemId = editingItemId,
         onShowAddTodo = { showAddTodo = true },
         onShowAddGoal = { showAddGoal = true },
         onDismissAddTodo = { showAddTodo = false },
@@ -141,6 +144,9 @@ fun HomeScreen() {
         onDismissFilterSheet = { showFilterSheet = false },
         onAddTodo = viewModel::addTodo,
         onAddGoal = viewModel::addGoal,
+        onUpdateTodo = viewModel::updateTodo,
+        onUpdateGoal = viewModel::updateGoal,
+        onDismissEdit = { editingItemId = null },
         onApplyFilters = viewModel::applyFilters,
         onClearFilters = { viewModel.applyFilters(TaskFilterType.ALL, TaskSort.RECENT, false) },
         onQueryChanged = viewModel::onQueryChanged,
@@ -148,6 +154,7 @@ fun HomeScreen() {
         onIncrementGoal = viewModel::onIncrementGoal,
         onDecrementGoal = viewModel::onDecrementGoal,
         onUncomplete = viewModel::onUncomplete,
+        onEditItem = { editingItemId = it },
         onShowFilters = {
             focusManager.clearFocus()
             keyboardController?.hide()
@@ -167,13 +174,17 @@ fun HomeContent(
     showAddTodo: Boolean,
     showAddGoal: Boolean,
     showFilterSheet: Boolean,
+    editingItemId: String?,
     onShowAddTodo: () -> Unit,
     onShowAddGoal: () -> Unit,
     onDismissAddTodo: () -> Unit,
     onDismissAddGoal: () -> Unit,
     onDismissFilterSheet: () -> Unit,
     onAddTodo: (String, Long) -> Unit,
-    onAddGoal: (String, Int) -> Unit,
+    onAddGoal: (String, GoalPeriodicity, Long) -> Unit,
+    onUpdateTodo: (String, String, Long) -> Unit,
+    onUpdateGoal: (String, String, GoalPeriodicity, Long) -> Unit,
+    onDismissEdit: () -> Unit,
     onApplyFilters: (TaskFilterType, TaskSort, Boolean) -> Unit,
     onClearFilters: () -> Unit,
     onQueryChanged: (String) -> Unit,
@@ -181,6 +192,7 @@ fun HomeContent(
     onIncrementGoal: (String) -> Unit,
     onDecrementGoal: (String) -> Unit,
     onUncomplete: (String) -> Unit,
+    onEditItem: (String) -> Unit,
     onShowFilters: () -> Unit
 ) {
     if (showAddTodo) {
@@ -196,11 +208,37 @@ fun HomeContent(
     if (showAddGoal) {
         AddGoalComponent(
             onDismiss = onDismissAddGoal,
-            onConfirm = { title, target ->
-                onAddGoal(title, target)
+            onConfirm = { title, periodicity, dueDay ->
+                onAddGoal(title, periodicity, dueDay)
                 onDismissAddGoal()
             }
         )
+    }
+
+    val editingItem = state.totalAllItems.firstOrNull { it.id == editingItemId }
+    if (editingItem != null) {
+        if (editingItem.type == TodayItemType.TODO) {
+            EditTodoComponent(
+                initialTitle = editingItem.title,
+                initialScheduledDay = editingItem.scheduledDay,
+                onDismiss = onDismissEdit,
+                onConfirm = { title, scheduledDay ->
+                    onUpdateTodo(editingItem.id, title, scheduledDay)
+                    onDismissEdit()
+                }
+            )
+        } else {
+            EditGoalComponent(
+                initialTitle = editingItem.title,
+                initialPeriodicity = editingItem.periodicity ?: GoalPeriodicity.MONTHLY,
+                initialDueDay = editingItem.dueDay,
+                onDismiss = onDismissEdit,
+                onConfirm = { title, periodicity, dueDay ->
+                    onUpdateGoal(editingItem.id, title, periodicity, dueDay)
+                    onDismissEdit()
+                }
+            )
+        }
     }
 
     if (showFilterSheet) {
@@ -249,16 +287,25 @@ fun HomeContent(
                     onToggleDone = onToggleDone,
                     onIncrementGoal = onIncrementGoal,
                     onDecrementGoal = onDecrementGoal,
-                    onUncomplete = onUncomplete
+                    onUncomplete = onUncomplete,
+                    onItemClick = onEditItem
                 )
             }
             item {
-                PercentageLine(
-                    dayPercent = statsState.dayPercent,
-                    weekPercent = statsState.weekPercent,
-                    monthPercent = statsState.monthPercent,
-                    yearPercent = statsState.yearPercent
-                )
+            PercentageLine(
+                dayCompleted = statsState.dayCompleted,
+                dayPending = statsState.dayPending,
+                dayOverdue = statsState.dayOverdue,
+                weekCompleted = statsState.weekCompleted,
+                weekPending = statsState.weekPending,
+                weekOverdue = statsState.weekOverdue,
+                monthCompleted = statsState.monthCompleted,
+                monthPending = statsState.monthPending,
+                monthOverdue = statsState.monthOverdue,
+                yearCompleted = statsState.yearCompleted,
+                yearPending = statsState.yearPending,
+                yearOverdue = statsState.yearOverdue
+            )
             }
             item {
                 FilterLine(
@@ -273,7 +320,8 @@ fun HomeContent(
                     onToggleDone = onToggleDone,
                     onIncrementGoal = onIncrementGoal,
                     onDecrementGoal = onDecrementGoal,
-                    onUncomplete = onUncomplete
+                    onUncomplete = onUncomplete,
+                    onItemClick = onEditItem
                 )
             }
         }
@@ -318,10 +366,18 @@ fun HomeContentPreview() {
                 doneOnly = false
             ),
             statsState = HomeStatsState(
-                dayPercent = 40,
-                weekPercent = 55,
-                monthPercent = 20,
-                yearPercent = 10
+                dayCompleted = 40,
+                dayPending = 30,
+                dayOverdue = 30,
+                weekCompleted = 20,
+                weekPending = 50,
+                weekOverdue = 30,
+                monthCompleted = 10,
+                monthPending = 40,
+                monthOverdue = 50,
+                yearCompleted = 70,
+                yearPending = 20,
+                yearOverdue = 10
             ),
             calendarState = CalendarBannerState(
                 timeText = "09:21",
@@ -333,13 +389,17 @@ fun HomeContentPreview() {
             showAddTodo = false,
             showAddGoal = false,
             showFilterSheet = false,
+            editingItemId = null,
             onShowAddTodo = {},
             onShowAddGoal = {},
             onDismissAddTodo = {},
             onDismissAddGoal = {},
             onDismissFilterSheet = {},
             onAddTodo = { _, _ -> },
-            onAddGoal = { _, _ -> },
+            onAddGoal = { _, _, _ -> },
+            onUpdateTodo = { _, _, _ -> },
+            onUpdateGoal = { _, _, _, _ -> },
+            onDismissEdit = {},
             onApplyFilters = { _, _, _ -> },
             onClearFilters = {},
             onQueryChanged = {},
@@ -347,6 +407,7 @@ fun HomeContentPreview() {
             onIncrementGoal = {},
             onDecrementGoal = {},
             onUncomplete = {},
+            onEditItem = {},
             onShowFilters = {}
         )
     }

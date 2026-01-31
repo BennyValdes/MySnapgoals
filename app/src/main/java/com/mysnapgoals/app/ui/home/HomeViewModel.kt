@@ -2,13 +2,18 @@ package com.mysnapgoals.app.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mysnapgoals.app.domain.model.GoalPeriodicity
 import com.mysnapgoals.app.domain.model.GoalProgressEvent
+import com.mysnapgoals.app.domain.model.Task
+import com.mysnapgoals.app.domain.model.TaskType
 import com.mysnapgoals.app.domain.usecase.AddGoalUseCase
 import com.mysnapgoals.app.domain.usecase.AddTodoUseCase
 import com.mysnapgoals.app.domain.usecase.InsertGoalProgressEventUseCase
 import com.mysnapgoals.app.domain.usecase.ObserveTasksUseCase
-import com.mysnapgoals.app.domain.usecase.SetCurrentUseCase
 import com.mysnapgoals.app.domain.usecase.SetDoneUseCase
+import com.mysnapgoals.app.domain.usecase.SumGoalProgressForGoalUseCase
+import com.mysnapgoals.app.domain.usecase.UpdateTaskUseCase
+import com.mysnapgoals.app.domain.usecase.ObserveGoalProgressEventsUseCase
 import com.mysnapgoals.app.ui.home.components.TodayItemType
 import com.mysnapgoals.app.ui.home.components.TodayItemUiModel
 import com.mysnapgoals.app.ui.home.mapper.toUiModel
@@ -17,11 +22,13 @@ import com.mysnapgoals.app.ui.home.state.HomeState
 import com.mysnapgoals.app.ui.home.state.TaskFilterType
 import com.mysnapgoals.app.ui.home.state.TaskSort
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
 import java.util.UUID
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -35,8 +42,10 @@ class HomeViewModel @Inject constructor(
     private val addTodoUseCase: AddTodoUseCase,
     private val addGoalUseCase: AddGoalUseCase,
     private val setDoneUseCase: SetDoneUseCase,
-    private val setCurrentUseCase: SetCurrentUseCase,
-    private val insertGoalProgressEventUseCase: InsertGoalProgressEventUseCase
+    private val insertGoalProgressEventUseCase: InsertGoalProgressEventUseCase,
+    private val sumGoalProgressForGoalUseCase: SumGoalProgressForGoalUseCase,
+    private val updateTaskUseCase: UpdateTaskUseCase,
+    private val observeGoalProgressEventsUseCase: ObserveGoalProgressEventsUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeState())
@@ -45,44 +54,103 @@ class HomeViewModel @Inject constructor(
     private val _events = Channel<HomeEvent>(capacity = Channel.BUFFERED)
     val events = _events.receiveAsFlow()
 
+    private val dayTick = MutableStateFlow(todayEpochDay())
+
     private val removedStack = ArrayDeque<TodayItemUiModel>()
     private var confirmTopJob: Job? = null
+    private val defaultGoalPeriodicity = GoalPeriodicity.MONTHLY
+    private var taskById: Map<String, Task> = emptyMap()
 
     init {
         viewModelScope.launch {
-            observeTasks().collect { entities ->
-                _state.update { current ->
-                    val today = todayEpochDay()
+            while (true) {
+                val now = java.time.ZonedDateTime.now()
+                val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
+                val delayMs = java.time.Duration.between(now, nextMidnight).toMillis().coerceAtLeast(0)
+                delay(delayMs)
+                dayTick.value = todayEpochDay()
+            }
+        }
 
+        viewModelScope.launch {
+            combine(
+                observeTasks(),
+                observeGoalProgressEventsUseCase(),
+                dayTick
+            ) { tasks, _, _ -> tasks }
+                .collect { entities ->
+                val today = todayEpochDay()
+                val goalProgressToday = mutableMapOf<String, Int>()
+                val goalProgressCurrent = mutableMapOf<String, Int>()
+                val goalTargetCurrent = mutableMapOf<String, Int>()
+                taskById = entities.associateBy { it.id }
+
+                for (goal in entities.filter { it.type == TaskType.GOAL }) {
+                    val periodicity = goal.periodicity ?: defaultGoalPeriodicity
+                    val (periodStart, periodEnd) = periodRangeForToday(periodicity, today)
+                    val progressCurrent = sumGoalProgressForGoalUseCase(goal.id, periodStart, periodEnd)
+                    val progressToday = sumGoalProgressForGoalUseCase(goal.id, today, today)
+                    val target = periodTarget(periodicity, today)
+                    goalProgressCurrent[goal.id] = progressCurrent
+                    goalProgressToday[goal.id] = progressToday
+                    goalTargetCurrent[goal.id] = target
+                }
+
+                _state.update { current ->
                     val todaySource =
                         entities.asSequence()
                             .filter { !it.isDone }
                             .filter { (it.scheduledDay ?: today) == today }
-                            .map { it.toUiModel() }
+                            .map { task ->
+                                val base = task.toUiModel()
+                                if (task.type == TaskType.GOAL) {
+                                    val currentValue = goalProgressCurrent[task.id] ?: 0
+                                    val target = goalTargetCurrent[task.id] ?: 0
+                                    base.copy(current = currentValue, target = target)
+                                } else {
+                                    base
+                                }
+                            }
+                            .filterNot { item ->
+                                if (item.type != TodayItemType.GOAL) return@filterNot false
+                                val progressToday = goalProgressToday[item.id] ?: 0
+                                val target = goalTargetCurrent[item.id] ?: 0
+                                val progressCurrent = goalProgressCurrent[item.id] ?: 0
+                                progressToday > 0 || (target > 0 && progressCurrent >= target)
+                            }
                             .filterNot { it.id in current.hiddenIds } // respeta undo overlay
                             .toList()
 
-                    val totalSource =
-                        entities.asSequence()
-                            // si quieres incluir también scheduledDay==null o cualquier día, aquí es donde se define
-                            .map { it.toUiModel() }
-                            .filterNot { it.id in current.hiddenIds }
-                            .toList()
+                        val totalSource =
+                            entities.asSequence()
+                            // si quieres incluir tambien scheduledDay==null o cualquier dia, aqui es donde se define
+                            .map { task ->
+                                val base = task.toUiModel()
+                                if (task.type == TaskType.GOAL) {
+                                    val currentValue = goalProgressCurrent[task.id] ?: 0
+                                    val target = goalTargetCurrent[task.id] ?: 0
+                                    base.copy(current = currentValue, target = target)
+                                } else {
+                                    base
+                                }
+                                }
+                                .filterNot { it.id in current.hiddenIds }
+                                .toList()
 
-                    current.copy(
-                        todayItems = todaySource,
-                        totalAllItems = totalSource,
-                        totalItems = applyFilters(
-                            all = totalSource,
-                            hiddenIds = current.hiddenIds,
-                            query = current.query,
-                            filterType = current.filterType,
-                            sort = current.sort,
-                            doneOnly = current.doneOnly
+                        current.copy(
+                            todayItems = todaySource,
+                            totalAllItems = totalSource,
+                            totalItems = applyFilters(
+                                all = totalSource,
+                                hiddenIds = current.hiddenIds,
+                                query = current.query,
+                                filterType = current.filterType,
+                                sort = current.sort,
+                                doneOnly = current.doneOnly
+                            )
                         )
-                    )
+                    }
                 }
-            }
         }
     }
 
@@ -92,9 +160,41 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun addGoal(title: String, target: Int) {
+    fun addGoal(title: String, periodicity: GoalPeriodicity, dueDay: Long) {
         viewModelScope.launch {
-            addGoalUseCase(title = title, target = target, scheduledDay = todayEpochDay())
+            addGoalUseCase(
+                title = title,
+                periodicity = periodicity,
+                dueDay = dueDay,
+                scheduledDay = todayEpochDay()
+            )
+        }
+    }
+
+    fun updateTodo(id: String, title: String, scheduledDay: Long) {
+        val task = taskById[id] ?: return
+        if (task.type != TaskType.TODO) return
+        viewModelScope.launch {
+            updateTaskUseCase(
+                task.copy(
+                    title = title,
+                    scheduledDay = scheduledDay
+                )
+            )
+        }
+    }
+
+    fun updateGoal(id: String, title: String, periodicity: GoalPeriodicity, dueDay: Long) {
+        val task = taskById[id] ?: return
+        if (task.type != TaskType.GOAL) return
+        viewModelScope.launch {
+            updateTaskUseCase(
+                task.copy(
+                    title = title,
+                    periodicity = periodicity,
+                    dueDay = dueDay
+                )
+            )
         }
     }
 
@@ -120,12 +220,11 @@ class HomeViewModel @Inject constructor(
 
         val current = item.current ?: 0
         val target = item.target ?: current
-
         val next = (current + 1).coerceAtMost(target)
         if (next == current) return
 
-        val reachedTarget = next >= target
-        applyGoalIncrement(id = id, nextValue = next, markDone = reachedTarget)
+        updateGoalCurrent(id = id, nextValue = next)
+        applyGoalIncrement(id = id)
     }
 
     fun onDecrementGoal(id: String) {
@@ -138,7 +237,8 @@ class HomeViewModel @Inject constructor(
         val next = (current - 1).coerceAtLeast(0)
         if (next == current) return
 
-        applyGoalDecrement(id = id, nextValue = next)
+        updateGoalCurrent(id = id, nextValue = next)
+        applyGoalDecrement(id = id)
     }
 
     fun onUncomplete(id: String) {
@@ -163,30 +263,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun applyGoalIncrement(id: String, nextValue: Int, markDone: Boolean) {
-        _state.update { current ->
-            val newToday =
-                if (markDone) current.todayItems.filterNot { it.id == id }
-                else current.todayItems.map { if (it.id == id) it.copy(current = nextValue) else it }
-
-            val newTotalAll =
-                if (markDone) current.totalAllItems.filterNot { it.id == id }
-                else current.totalAllItems.map { if (it.id == id) it.copy(current = nextValue) else it }
-
-            current.copy(
-                todayItems = newToday,
-                totalAllItems = newTotalAll,
-                totalItems = applyFilters(
-                    all = newTotalAll,
-                    hiddenIds = current.hiddenIds,
-                    query = current.query,
-                    filterType = current.filterType,
-                    sort = current.sort,
-                    doneOnly = current.doneOnly
-                )
-            )
-        }
-
+    private fun applyGoalIncrement(id: String) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val epochDay = java.time.LocalDate.now().toEpochDay()
@@ -200,12 +277,6 @@ class HomeViewModel @Inject constructor(
                     epochDay = epochDay
                 )
             )
-
-            setCurrentUseCase(id = id, current = nextValue, now = now)
-
-            if (markDone) {
-                setDoneUseCase(id = id, isDone = true, now = now)
-            }
         }
     }
 
@@ -321,7 +392,24 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun applyGoalDecrement(id: String, nextValue: Int) {
+    private fun applyGoalDecrement(id: String) {
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            val epochDay = java.time.LocalDate.now().toEpochDay()
+
+            insertGoalProgressEventUseCase(
+                GoalProgressEvent(
+                    id = UUID.randomUUID().toString(),
+                    goalId = id,
+                    delta = -1,
+                    timestamp = now,
+                    epochDay = epochDay
+                )
+            )
+        }
+    }
+
+    private fun updateGoalCurrent(id: String, nextValue: Int) {
         _state.update { current ->
             val newToday =
                 current.todayItems.map { if (it.id == id) it.copy(current = nextValue) else it }
@@ -341,23 +429,6 @@ class HomeViewModel @Inject constructor(
                     doneOnly = current.doneOnly
                 )
             )
-        }
-
-        viewModelScope.launch {
-            val now = System.currentTimeMillis()
-            val epochDay = java.time.LocalDate.now().toEpochDay()
-
-            insertGoalProgressEventUseCase(
-                GoalProgressEvent(
-                    id = UUID.randomUUID().toString(),
-                    goalId = id,
-                    delta = -1,
-                    timestamp = now,
-                    epochDay = epochDay
-                )
-            )
-
-            setCurrentUseCase(id = id, current = nextValue, now = now)
         }
     }
 
@@ -421,6 +492,42 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun todayEpochDay(): Long = java.time.LocalDate.now().toEpochDay()
+
+    private fun periodRangeForToday(periodicity: GoalPeriodicity, todayEpochDay: Long): Pair<Long, Long> {
+        val today = LocalDate.ofEpochDay(todayEpochDay)
+        return when (periodicity) {
+            GoalPeriodicity.DAILY -> todayEpochDay to todayEpochDay
+            GoalPeriodicity.WEEKLY -> {
+                val start = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+                val end = start.plusDays(6)
+                start.toEpochDay() to end.toEpochDay()
+            }
+            GoalPeriodicity.MONTHLY -> {
+                val start = today.withDayOfMonth(1)
+                val end = start.plusMonths(1).minusDays(1)
+                start.toEpochDay() to end.toEpochDay()
+            }
+            GoalPeriodicity.SEMESTRAL -> {
+                val start = if (today.monthValue <= 6) {
+                    LocalDate.of(today.year, 1, 1)
+                } else {
+                    LocalDate.of(today.year, 7, 1)
+                }
+                val end = start.plusMonths(6).minusDays(1)
+                start.toEpochDay() to end.toEpochDay()
+            }
+            GoalPeriodicity.ANNUAL -> {
+                val start = LocalDate.of(today.year, 1, 1)
+                val end = LocalDate.of(today.year, 12, 31)
+                start.toEpochDay() to end.toEpochDay()
+            }
+        }
+    }
+
+    private fun periodTarget(periodicity: GoalPeriodicity, todayEpochDay: Long): Int {
+        val (start, end) = periodRangeForToday(periodicity, todayEpochDay)
+        return (end - start + 1).toInt().coerceAtLeast(1)
+    }
 
     override fun onCleared() {
         confirmTopJob?.cancel()

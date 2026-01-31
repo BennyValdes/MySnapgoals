@@ -19,6 +19,9 @@ interface GoalProgressEventDao {
     @Query("SELECT * FROM goal_progress_events WHERE epochDay BETWEEN :startDay AND :endDay")
     fun observeBetweenDays(startDay: Long, endDay: Long): Flow<List<GoalProgressEventEntity>>
 
+    @Query("SELECT * FROM goal_progress_events")
+    fun observeAll(): Flow<List<GoalProgressEventEntity>>
+
     @Query("SELECT COALESCE(SUM(delta), 0) FROM goal_progress_events WHERE goalId = :goalId AND epochDay BETWEEN :startDay AND :endDay")
     suspend fun sumDeltaForGoalBetweenDays(goalId: String, startDay: Long, endDay: Long): Int
 

@@ -13,6 +13,7 @@ interface TasksRepository {
     suspend fun setCurrent(id: String, current: Int, now: Long)
     suspend fun seedIfEmpty(tasks: List<Task>)
     suspend fun insertGoalProgressEvent(event: GoalProgressEvent)
+    fun observeGoalProgressEvents(): Flow<List<GoalProgressEvent>>
     suspend fun sumGoalsDeltaBetweenDays(startDay: Long, endDay: Long): Int
     suspend fun sumDeltaForGoalBetweenDays(goalId: String, startDay: Long, endDay: Long): Int
     suspend fun sumDeltaForGoalsBetweenDays(goalIds: List<String>, startDay: Long, endDay: Long): Int

@@ -23,6 +23,7 @@ fun TotalList(
     onIncrementGoal: (String) -> Unit,
     onDecrementGoal: (String) -> Unit,
     onUncomplete: (String) -> Unit,
+    onItemClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val ordered =
@@ -66,7 +67,8 @@ fun TotalList(
                     onToggleDone = onToggleDone,
                     onIncrement = onIncrementGoal,
                     onDecrement = onDecrementGoal,
-                    onUncomplete = onUncomplete
+                    onUncomplete = onUncomplete,
+                    onItemClick = onItemClick
                 )
             }
         }
@@ -98,6 +100,7 @@ fun TotalListPreview() {
             onIncrementGoal = {},
             onDecrementGoal = {},
             onUncomplete = {},
+            onItemClick = {}
         )
     }
 }

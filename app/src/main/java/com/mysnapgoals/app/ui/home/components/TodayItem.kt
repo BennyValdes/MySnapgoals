@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.mysnapgoals.app.R
+import com.mysnapgoals.app.domain.model.GoalPeriodicity
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
 enum class TodayItemType {
@@ -40,7 +41,10 @@ data class TodayItemUiModel(
     val title: String,
     val isDone: Boolean,
     val current: Int? = null,
-    val target: Int? = null
+    val target: Int? = null,
+    val scheduledDay: Long? = null,
+    val periodicity: GoalPeriodicity? = null,
+    val dueDay: Long? = null
 )
 
 @Composable
@@ -50,15 +54,11 @@ fun TodayItem(
     onIncrement: (String) -> Unit,
     onDecrement: (String) -> Unit,
     onUncomplete: (String) -> Unit,
+    onItemClick: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val onContainer = MaterialTheme.colorScheme.onSurface
     val isGoal = model.type == TodayItemType.GOAL
-
-    val progressText =
-        if (isGoal && model.current != null && model.target != null) {
-            "${model.current}/${model.target}"
-        } else null
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -69,10 +69,6 @@ fun TodayItem(
     ) {
         Row(
             modifier = Modifier
-                .clickable(
-                    role = Role.Button,
-                    onClick = { onToggleDone(model.id) }
-                )
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -90,16 +86,32 @@ fun TodayItem(
                     )
                 }
             } else {
-                Icon(
-                    painter = painterResource(R.drawable.ic_checkbox_outline),
-                    contentDescription = "Pendiente",
-                    tint = onContainer.copy(alpha = 0.55f),
-                    modifier = Modifier.size(22.dp)
-                )
+                IconButton(
+                    onClick = { onToggleDone(model.id) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_checkbox_outline),
+                        contentDescription = "Pendiente",
+                        tint = onContainer.copy(alpha = 0.55f),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
 
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .then(
+                        if (onItemClick != null) {
+                            Modifier.clickable(
+                                role = Role.Button,
+                                onClick = { onItemClick(model.id) }
+                            )
+                        } else {
+                            Modifier
+                        }
+                    )
             ) {
                 Text(
                     text = model.title,
@@ -111,10 +123,10 @@ fun TodayItem(
                     modifier = Modifier.alpha(if (model.isDone) 0.55f else 1f)
                 )
 
-                if (progressText != null) {
+                if (isGoal && model.current != null && model.target != null) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = progressText,
+                        text = "${model.current}/${model.target}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = onContainer.copy(alpha = 0.70f)
                     )

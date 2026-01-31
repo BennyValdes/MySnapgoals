@@ -20,7 +20,9 @@ class AddTodoUseCase(
                 updatedAt = now,
                 current = null,
                 target = null,
-                doneAt = null
+                doneAt = null,
+                periodicity = null,
+                dueDay = null
             )
         )
     }
