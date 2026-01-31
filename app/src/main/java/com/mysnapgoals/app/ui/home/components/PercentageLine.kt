@@ -39,15 +39,27 @@ fun PercentageLine(
     dayCompleted: Int,
     dayPending: Int,
     dayOverdue: Int,
+    dayCompletedCount: Int,
+    dayPendingCount: Int,
+    dayOverdueCount: Int,
     weekCompleted: Int,
     weekPending: Int,
     weekOverdue: Int,
+    weekCompletedCount: Int,
+    weekPendingCount: Int,
+    weekOverdueCount: Int,
     monthCompleted: Int,
     monthPending: Int,
     monthOverdue: Int,
+    monthCompletedCount: Int,
+    monthPendingCount: Int,
+    monthOverdueCount: Int,
     yearCompleted: Int,
     yearPending: Int,
     yearOverdue: Int,
+    yearCompletedCount: Int,
+    yearPendingCount: Int,
+    yearOverdueCount: Int,
     modifier: Modifier = Modifier
 ) {
     Panel3D(
@@ -66,6 +78,9 @@ fun PercentageLine(
                 completed = dayCompleted,
                 pending = dayPending,
                 overdue = dayOverdue,
+                completedCount = dayCompletedCount,
+                pendingCount = dayPendingCount,
+                overdueCount = dayOverdueCount,
                 label = "Dia"
             )
 
@@ -73,6 +88,9 @@ fun PercentageLine(
                 completed = weekCompleted,
                 pending = weekPending,
                 overdue = weekOverdue,
+                completedCount = weekCompletedCount,
+                pendingCount = weekPendingCount,
+                overdueCount = weekOverdueCount,
                 label = "Sem"
             )
 
@@ -80,6 +98,9 @@ fun PercentageLine(
                 completed = monthCompleted,
                 pending = monthPending,
                 overdue = monthOverdue,
+                completedCount = monthCompletedCount,
+                pendingCount = monthPendingCount,
+                overdueCount = monthOverdueCount,
                 label = "Mes"
             )
 
@@ -87,6 +108,9 @@ fun PercentageLine(
                 completed = yearCompleted,
                 pending = yearPending,
                 overdue = yearOverdue,
+                completedCount = yearCompletedCount,
+                pendingCount = yearPendingCount,
+                overdueCount = yearOverdueCount,
                 label = "Ano"
             )
         }
@@ -98,6 +122,9 @@ private fun BarCell(
     completed: Int,
     pending: Int,
     overdue: Int,
+    completedCount: Int,
+    pendingCount: Int,
+    overdueCount: Int,
     label: String
 ) {
     val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
@@ -120,6 +147,9 @@ private fun BarCell(
             completed = c,
             pending = p,
             overdue = o,
+            completedCount = completedCount,
+            pendingCount = pendingCount,
+            overdueCount = overdueCount,
             barHeight = barHeight,
             barWidth = barWidth,
             trackColor = trackColor,
@@ -152,6 +182,9 @@ private fun BarWithTooltip(
     completed: Int,
     pending: Int,
     overdue: Int,
+    completedCount: Int,
+    pendingCount: Int,
+    overdueCount: Int,
     barHeight: androidx.compose.ui.unit.Dp,
     barWidth: androidx.compose.ui.unit.Dp,
     trackColor: androidx.compose.ui.graphics.Color,
@@ -160,7 +193,7 @@ private fun BarWithTooltip(
     overdueColor: androidx.compose.ui.graphics.Color
 ) {
     var showTooltip by remember { mutableStateOf(false) }
-    val tooltipText = "Completados: $completed%\nPendientes: $pending%\nNo completados: $overdue%"
+    val tooltipText = "Completados: $completedCount ($completed%)\nPendientes: $pendingCount ($pending%)\nNo completados: $overdueCount ($overdue%)"
 
     LaunchedEffect(showTooltip) {
         if (showTooltip) {
@@ -228,15 +261,27 @@ fun PercentageLinePreview() {
             dayCompleted = 40,
             dayPending = 30,
             dayOverdue = 30,
+            dayCompletedCount = 2,
+            dayPendingCount = 1,
+            dayOverdueCount = 1,
             weekCompleted = 20,
             weekPending = 50,
             weekOverdue = 30,
+            weekCompletedCount = 3,
+            weekPendingCount = 6,
+            weekOverdueCount = 2,
             monthCompleted = 10,
             monthPending = 40,
             monthOverdue = 50,
+            monthCompletedCount = 4,
+            monthPendingCount = 12,
+            monthOverdueCount = 8,
             yearCompleted = 70,
             yearPending = 20,
-            yearOverdue = 10
+            yearOverdue = 10,
+            yearCompletedCount = 120,
+            yearPendingCount = 30,
+            yearOverdueCount = 10
         )
     }
 }
