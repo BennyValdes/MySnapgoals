@@ -1,11 +1,19 @@
 package com.mysnapgoals.app.ui.home
 
-import com.airbnb.mvrx.MavericksState
-import com.airbnb.mvrx.MavericksViewModel
-import com.airbnb.mvrx.MavericksViewModelFactory
-import com.airbnb.mvrx.ViewModelContext
-import com.mysnapgoals.app.SnapGoalsGraph
-import com.mysnapgoals.app.data.local.entity.TaskEntity
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mysnapgoals.app.domain.model.Task
+import com.mysnapgoals.app.domain.model.TaskType
+import com.mysnapgoals.app.domain.usecase.ObserveTasksUseCase
+import com.mysnapgoals.app.domain.usecase.SumGoalProgressUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class HomeStatsState(
@@ -13,40 +21,38 @@ data class HomeStatsState(
     val weekPercent: Int = 0,
     val monthPercent: Int = 0,
     val yearPercent: Int = 0
-) : MavericksState
+)
 
-class HomeStatsViewModel(
-    initialState: HomeStatsState
-) : MavericksViewModel<HomeStatsState>(initialState) {
+@HiltViewModel
+class HomeStatsViewModel @Inject constructor(
+    private val observeTasks: ObserveTasksUseCase,
+    private val sumGoalProgress: SumGoalProgressUseCase
+) : ViewModel() {
 
-    companion object : MavericksViewModelFactory<HomeStatsViewModel, HomeStatsState> {
-        override fun create(viewModelContext: ViewModelContext, state: HomeStatsState) =
-            HomeStatsViewModel(state)
-    }
-
-    private val repo = SnapGoalsGraph.tasksRepository
+    private val _state = MutableStateFlow(HomeStatsState())
+    val state: StateFlow<HomeStatsState> = _state
 
     init {
         viewModelScope.launch {
-            repo.tasksState.collect { entities ->
+            observeTasks().collect { entities ->
                 val today = todayEpochDay()
 
                 val (weekStart, weekEndExclusive) = weekRange(today)
                 val (monthStart, monthEndExclusive) = monthRange(today)
                 val (yearStart, yearEndExclusive) = yearRange(today)
 
-                val todayItems = entities.filter { it.scheduledDay == today }
-                val weekItems = entities.filter { it.scheduledDay in weekStart until weekEndExclusive }
-                val monthItems = entities.filter { it.scheduledDay in monthStart until monthEndExclusive }
-                val yearItems = entities.filter { it.scheduledDay in yearStart until yearEndExclusive }
+                val todayItems = entities.filter { (it.scheduledDay ?: today) == today }
+                val weekItems = entities.filter { (it.scheduledDay ?: today) in weekStart until weekEndExclusive }
+                val monthItems = entities.filter { (it.scheduledDay ?: today) in monthStart until monthEndExclusive }
+                val yearItems = entities.filter { (it.scheduledDay ?: today) in yearStart until yearEndExclusive }
 
-                val dayPercent = computeDayPercent(todayItems, todayEpochDay = today)
-                val weekPercent = computeRangePercent(weekItems)
-                val monthPercent = computeRangePercent(monthItems)
-                val yearPercent = computeRangePercent(yearItems)
+                val dayPercent = calculatePercentForRange(todayItems, today, today)
+                val weekPercent = calculatePercentForRange(weekItems, weekStart, weekEndExclusive - 1)
+                val monthPercent = calculatePercentForRange(monthItems, monthStart, monthEndExclusive - 1)
+                val yearPercent = calculatePercentForRange(yearItems, yearStart, yearEndExclusive - 1)
 
-                setState {
-                    copy(
+                _state.update {
+                    it.copy(
                         dayPercent = dayPercent,
                         weekPercent = weekPercent,
                         monthPercent = monthPercent,
@@ -57,129 +63,68 @@ class HomeStatsViewModel(
         }
     }
 
-
-    private fun computeDayPercent(items: List<TaskEntity>, todayEpochDay: Long): Int {
-        if (items.isEmpty()) return 0
-
-        val avg =
-            items
-                .asSequence()
-                .map { e ->
-                    when (e.type) {
-                        TaskEntity.TYPE_TODO -> if (e.isDone) 1.0 else 0.0
-
-                        TaskEntity.TYPE_GOAL -> {
-                            // Para "Hoy": cuenta 100% si avanzó hoy (updatedAt del día de hoy)
-                            val updatedDay = epochDayFromMillis(e.updatedAt)
-                            if (updatedDay == todayEpochDay) 1.0 else 0.0
-                        }
-
-                        else -> 0.0
-                    }
-                }
-                .average()
-
-        return (avg * 100).toInt().coerceIn(0, 100)
-    }
-
-    private fun computeRangePercent(items: List<TaskEntity>): Int {
-        if (items.isEmpty()) return 0
-
-        val avg =
-            items
-                .asSequence()
-                .map { e ->
-                    when (e.type) {
-                        TaskEntity.TYPE_TODO -> if (e.isDone) 1.0 else 0.0
-
-                        TaskEntity.TYPE_GOAL -> {
-                            val target = (e.target ?: 0).coerceAtLeast(0)
-                            val current = (e.current ?: 0).coerceAtLeast(0)
-
-                            if (target <= 0) {
-                                if (e.isDone) 1.0 else 0.0
-                            } else {
-                                (current.toDouble() / target.toDouble()).coerceIn(0.0, 1.0)
-                            }
-                        }
-
-                        else -> 0.0
-                    }
-                }
-                .average()
-
-        return (avg * 100).toInt().coerceIn(0, 100)
-    }
-
     private fun weekRange(todayEpochDay: Long): Pair<Long, Long> {
-        val zone = java.time.ZoneId.systemDefault()
-        val today = java.time.LocalDate.ofEpochDay(todayEpochDay)
-
-        // ISO week: Lunes como inicio
+        val today = LocalDate.ofEpochDay(todayEpochDay)
         val start = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
         val endExclusive = start.plusDays(7)
-
         return start.toEpochDay() to endExclusive.toEpochDay()
     }
 
     private fun monthRange(todayEpochDay: Long): Pair<Long, Long> {
-        val today = java.time.LocalDate.ofEpochDay(todayEpochDay)
+        val today = LocalDate.ofEpochDay(todayEpochDay)
         val start = today.withDayOfMonth(1)
         val endExclusive = start.plusMonths(1)
         return start.toEpochDay() to endExclusive.toEpochDay()
     }
 
     private fun yearRange(todayEpochDay: Long): Pair<Long, Long> {
-        val today = java.time.LocalDate.ofEpochDay(todayEpochDay)
+        val today = LocalDate.ofEpochDay(todayEpochDay)
         val start = today.withDayOfYear(1)
         val endExclusive = start.plusYears(1)
         return start.toEpochDay() to endExclusive.toEpochDay()
     }
 
-    private fun todayEpochDay(): Long = java.time.LocalDate.now().toEpochDay()
+    private fun todayEpochDay(): Long = LocalDate.now().toEpochDay()
 
     private fun epochDayFromMillis(millis: Long): Long {
-        return java.time.Instant.ofEpochMilli(millis)
-            .atZone(java.time.ZoneId.systemDefault())
+        return Instant.ofEpochMilli(millis)
+            .atZone(ZoneId.systemDefault())
             .toLocalDate()
             .toEpochDay()
     }
 
-    private fun rangeForWeek(today: Long): LongRange {
-        // hoy es epochDay; semana = últimos 6 días + hoy (7 días)
-        val start = today - 6
-        return start..today
-    }
-
-    private fun rangeForMonth(today: Long): LongRange {
-        val date = java.time.LocalDate.now()
-        val start = date.withDayOfMonth(1).toEpochDay()
-        return start..today
-    }
-
-    private fun rangeForYear(today: Long): LongRange {
-        val date = java.time.LocalDate.now()
-        val start = date.withDayOfYear(1).toEpochDay()
-        return start..today
-    }
-
     private suspend fun calculatePercentForRange(
-        tasks: List<TaskEntity>,
+        tasks: List<Task>,
         startDay: Long,
         endDay: Long
     ): Int {
-        val inRange = tasks.filter { it.scheduledDay != null && it.scheduledDay in startDay..endDay }
+        if (tasks.isEmpty()) return 0
 
-        val todos = inRange.filter { it.type == TaskEntity.TYPE_TODO }
-        val goals = inRange.filter { it.type == TaskEntity.TYPE_GOAL }
+        val today = todayEpochDay()
+        val inRange =
+            tasks.filter { task ->
+                val day = task.scheduledDay ?: today
+                day in startDay..endDay
+            }
+
+        val todos = inRange.filter { it.type == TaskType.TODO }
+        val goals = inRange.filter { it.type == TaskType.GOAL }
 
         val totalTodoUnits = todos.size
-        val doneTodoUnits = todos.count { it.isDone && it.doneAt != null } // o doneAt in range si quieres ultra preciso
+        val doneTodoUnits =
+            todos.count { todo ->
+                val doneDay = todo.doneAt?.let { epochDayFromMillis(it) }
+                todo.isDone && doneDay != null && doneDay in startDay..endDay
+            }
 
         val totalGoalUnits = goals.sumOf { it.target ?: 0 }
 
-        // progreso en rango se basa en events (no en current snapshot)
-        val goalProgressUnits = repo.sumGoalsDeltaBetweenDays(startDay, endDay) // tienes que exponerlo
+        val goalProgressUnits =
+            sumGoalProgress(
+                goalIds = goals.map { it.id },
+                startDay = startDay,
+                endDay = endDay
+            )
 
         val denom = totalTodoUnits + totalGoalUnits
         if (denom <= 0) return 0

@@ -1,13 +1,15 @@
 package com.mysnapgoals.app.ui.home
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +23,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.mysnapgoals.app.ui.components.Button3D
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 import kotlinx.coroutines.delay
 
@@ -84,31 +88,43 @@ fun AddGoalComponent(
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    val trimmedTitle = title.trim()
-                    val target = targetText.toIntOrNull()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button3D(
+                    onClick = {
+                        focusManager.clearFocus()
+                        onDismiss()
+                    },
+                    modifier = Modifier.weight(1f),
+                    height = 44.dp,
+                    depth = 4.dp
+                ) { Text("Cancelar") }
 
-                    val validTitle = trimmedTitle.isNotBlank()
-                    val validTarget = (target != null && target > 0)
+                Button3D(
+                    onClick = {
+                        val trimmedTitle = title.trim()
+                        val target = targetText.toIntOrNull()
 
-                    titleError = !validTitle
-                    targetError = !validTarget
+                        val validTitle = trimmedTitle.isNotBlank()
+                        val validTarget = (target != null && target > 0)
 
-                    if (!validTitle || !validTarget) return@TextButton
+                        titleError = !validTitle
+                        targetError = !validTarget
 
-                    focusManager.clearFocus()
-                    onConfirm(trimmedTitle, target!!)
-                }
-            ) { Text("Guardar") }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    focusManager.clearFocus()
-                    onDismiss()
-                }
-            ) { Text("Cancelar") }
+                        if (!validTitle || !validTarget) return@Button3D
+
+                        focusManager.clearFocus()
+                        onConfirm(trimmedTitle, target!!)
+                    },
+                    modifier = Modifier.weight(1f),
+                    height = 44.dp,
+                    depth = 4.dp
+                ) { Text("Guardar") }
+            }
         }
     )
 }

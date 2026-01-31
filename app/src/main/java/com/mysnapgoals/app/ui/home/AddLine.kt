@@ -9,10 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mysnapgoals.app.ui.components.Button3D
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
 @Composable
@@ -37,58 +35,46 @@ fun AddLine(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        FilledTonalButton(
+        Button3D(
             onClick = onAddGoal,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
-            contentPadding = ButtonDefaults.ContentPadding
+            height = 52.dp
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Agregar objetivo"
-                )
-                Text(
-                    text = "Agregar Objetivo",
-                    modifier = Modifier.padding(start = 8.dp),
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Start
-                )
-            }
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = "Agregar objetivo"
+            )
+            Text(
+                text = "Agregar Objetivo",
+                modifier = Modifier.padding(start = 8.dp),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Start
+            )
         }
 
-        FilledTonalButton(
+        Button3D(
             onClick = onAddTodo,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
-            contentPadding = ButtonDefaults.ContentPadding
+            height = 52.dp
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Agregar ToDo"
-                )
-                Text(
-                    text = "Agregar ToDo",
-                    modifier = Modifier.padding(start = 8.dp),
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Start
-                )
-            }
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = "Agregar ToDo"
+            )
+            Text(
+                text = "Agregar ToDo",
+                modifier = Modifier.padding(start = 8.dp),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Start
+            )
         }
     }
 }

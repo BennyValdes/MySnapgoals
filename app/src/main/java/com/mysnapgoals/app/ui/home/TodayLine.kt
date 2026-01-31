@@ -11,9 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import com.mysnapgoals.app.ui.components.TodayItem
-import com.mysnapgoals.app.ui.components.TodayItemType
-import com.mysnapgoals.app.ui.components.TodayItemUiModel
+import com.mysnapgoals.app.ui.home.components.TodayItem
+import com.mysnapgoals.app.ui.home.components.TodayItemType
+import com.mysnapgoals.app.ui.home.components.TodayItemUiModel
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
 @Composable
@@ -21,6 +21,8 @@ fun TodayLine(
     items: List<TodayItemUiModel>,
     onToggleDone: (String) -> Unit,
     onIncrementGoal: (String) -> Unit,
+    onDecrementGoal: (String) -> Unit,
+    onUncomplete: (String) -> Unit,
     modifier: Modifier = Modifier,
     maxItems: Int = 5
 ) {
@@ -68,7 +70,9 @@ fun TodayLine(
                 TodayItem(
                     model = item,
                     onToggleDone = onToggleDone,
-                    onIncrement = onIncrementGoal
+                    onIncrement = onIncrementGoal,
+                    onDecrement = onDecrementGoal,
+                    onUncomplete = onUncomplete
                 )
             }
         }
@@ -88,6 +92,8 @@ fun TodayLinePreviewToDo() {
             )),
             onToggleDone = {},
             onIncrementGoal = {},
+            onDecrementGoal = {},
+            onUncomplete = {},
         )
     }
 }
@@ -109,6 +115,8 @@ fun TodayLinePreviewGoal() {
             ),
             onToggleDone = {},
             onIncrementGoal = {},
+            onDecrementGoal = {},
+            onUncomplete = {},
         )
     }
 }
@@ -121,6 +129,8 @@ fun TodayLinePreviewEmpty() {
             items = listOf(),
             onToggleDone = {},
             onIncrementGoal = {},
+            onDecrementGoal = {},
+            onUncomplete = {},
         )
     }
 }

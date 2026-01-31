@@ -21,4 +21,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "mySnapgoals"
 include(":app")
+include(":core")
+include(":domain")
+include(":data")
  

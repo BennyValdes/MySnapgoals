@@ -1,51 +1,46 @@
 package com.mysnapgoals.app.ui.home
 
-import com.airbnb.mvrx.MavericksState
-import com.airbnb.mvrx.MavericksViewModel
-import com.airbnb.mvrx.MavericksViewModelFactory
-import com.airbnb.mvrx.ViewModelContext
-import com.mysnapgoals.app.SnapGoalsGraph
-import com.mysnapgoals.app.data.local.entity.GoalProgressEventEntity
-import com.mysnapgoals.app.data.local.entity.TaskEntity
-import com.mysnapgoals.app.data.mapper.toUiModel
-import com.mysnapgoals.app.ui.components.TodayItemType
-import com.mysnapgoals.app.ui.components.TodayItemUiModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mysnapgoals.app.domain.model.GoalProgressEvent
+import com.mysnapgoals.app.domain.usecase.AddGoalUseCase
+import com.mysnapgoals.app.domain.usecase.AddTodoUseCase
+import com.mysnapgoals.app.domain.usecase.InsertGoalProgressEventUseCase
+import com.mysnapgoals.app.domain.usecase.ObserveTasksUseCase
+import com.mysnapgoals.app.domain.usecase.SetCurrentUseCase
+import com.mysnapgoals.app.domain.usecase.SetDoneUseCase
+import com.mysnapgoals.app.ui.home.components.TodayItemType
+import com.mysnapgoals.app.ui.home.components.TodayItemUiModel
+import com.mysnapgoals.app.ui.home.mapper.toUiModel
+import com.mysnapgoals.app.ui.home.state.HomeEvent
+import com.mysnapgoals.app.ui.home.state.HomeState
+import com.mysnapgoals.app.ui.home.state.TaskFilterType
+import com.mysnapgoals.app.ui.home.state.TaskSort
+import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.UUID
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
+import javax.inject.Inject
 
-enum class TaskFilterType { ALL, TODO, GOAL }
-enum class TaskSort { RECENT, ALPHA }
 
-data class HomeState(
-    val todayItems: List<TodayItemUiModel> = emptyList(),          // NO filtrable
-    val totalAllItems: List<TodayItemUiModel> = emptyList(),       // source para TotalList
-    val totalItems: List<TodayItemUiModel> = emptyList(),          // filtrado (TotalList)
-    val hiddenIds: Set<String> = emptySet(),
-    val query: String = "",
-    val filterType: TaskFilterType = TaskFilterType.ALL,
-    val sort: TaskSort = TaskSort.RECENT
-) : MavericksState
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val observeTasks: ObserveTasksUseCase,
+    private val addTodoUseCase: AddTodoUseCase,
+    private val addGoalUseCase: AddGoalUseCase,
+    private val setDoneUseCase: SetDoneUseCase,
+    private val setCurrentUseCase: SetCurrentUseCase,
+    private val insertGoalProgressEventUseCase: InsertGoalProgressEventUseCase
+) : ViewModel() {
 
-sealed class HomeEvent {
-    data class ShowUndoRemovedTodo(val todo: TodayItemUiModel) : HomeEvent()
-}
-
-class HomeViewModel(
-    initialState: HomeState
-) : MavericksViewModel<HomeState>(initialState) {
-
-    companion object : MavericksViewModelFactory<HomeViewModel, HomeState> {
-        override fun create(
-            viewModelContext: ViewModelContext,
-            state: HomeState
-        ): HomeViewModel = HomeViewModel(state)
-    }
-
-    private val repo = SnapGoalsGraph.tasksRepository
+    private val _state = MutableStateFlow(HomeState())
+    val state: StateFlow<HomeState> = _state
 
     private val _events = Channel<HomeEvent>(capacity = Channel.BUFFERED)
     val events = _events.receiveAsFlow()
@@ -55,35 +50,35 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            repo.tasksState.collect { entities ->
-                setState {
+            observeTasks().collect { entities ->
+                _state.update { current ->
                     val today = todayEpochDay()
 
                     val todaySource =
                         entities.asSequence()
                             .filter { !it.isDone }
-                            .filter { it.scheduledDay == today }
+                            .filter { (it.scheduledDay ?: today) == today }
                             .map { it.toUiModel() }
-                            .filterNot { it.id in hiddenIds } // respeta undo overlay
+                            .filterNot { it.id in current.hiddenIds } // respeta undo overlay
                             .toList()
 
                     val totalSource =
                         entities.asSequence()
-                            .filter { !it.isDone }
                             // si quieres incluir también scheduledDay==null o cualquier día, aquí es donde se define
                             .map { it.toUiModel() }
-                            .filterNot { it.id in hiddenIds }
+                            .filterNot { it.id in current.hiddenIds }
                             .toList()
 
-                    copy(
+                    current.copy(
                         todayItems = todaySource,
                         totalAllItems = totalSource,
                         totalItems = applyFilters(
                             all = totalSource,
-                            hiddenIds = hiddenIds,
-                            query = query,
-                            filterType = filterType,
-                            sort = sort
+                            hiddenIds = current.hiddenIds,
+                            query = current.query,
+                            filterType = current.filterType,
+                            sort = current.sort,
+                            doneOnly = current.doneOnly
                         )
                     )
                 }
@@ -93,96 +88,101 @@ class HomeViewModel(
 
     fun addTodo(title: String) {
         viewModelScope.launch {
-            val now = System.currentTimeMillis()
-            repo.upsert(
-                TaskEntity(
-                    id = UUID.randomUUID().toString(),
-                    type = TaskEntity.TYPE_TODO,
-                    title = title,
-                    isDone = false,
-                    scheduledDay = todayEpochDay(),
-                    createdAt = now,
-                    updatedAt = now,
-                    doneAt = null,      // ✅ nuevo
-                    current = null,
-                    target = null
-                )
-            )
+            addTodoUseCase(title = title, scheduledDay = todayEpochDay())
         }
     }
 
     fun addGoal(title: String, target: Int) {
         viewModelScope.launch {
-            val now = System.currentTimeMillis()
-            repo.upsert(
-                TaskEntity(
-                    id = UUID.randomUUID().toString(),
-                    type = TaskEntity.TYPE_GOAL,
-                    title = title,
-                    isDone = false,
-                    scheduledDay = todayEpochDay(),
-                    createdAt = now,
-                    updatedAt = now,
-                    doneAt = null,      // ✅ nuevo
-                    current = 0,
-                    target = target
-                )
-            )
+            addGoalUseCase(title = title, target = target, scheduledDay = todayEpochDay())
         }
     }
 
     fun onToggleDone(id: String) {
-        withState { state ->
-            val item = state.totalAllItems.firstOrNull { it.id == id }
-                ?: state.todayItems.firstOrNull { it.id == id }
-                ?: return@withState
+        val state = _state.value
+        val item = state.totalAllItems.firstOrNull { it.id == id }
+            ?: state.todayItems.firstOrNull { it.id == id }
+            ?: return
 
-            if (item.type == TodayItemType.TODO) {
-                removeTodoWithUndo(item)
-            } else {
-                // Por ahora no removemos goals.
-                // Cuando quieras: toggle done en DB.
-            }
+        if (item.type == TodayItemType.TODO) {
+            removeTodoWithUndo(item)
+        } else {
+            // Por ahora no removemos goals.
+            // Cuando quieras: toggle done en DB.
         }
     }
 
     fun onIncrementGoal(id: String) {
-        withState { st ->
-            val item = st.totalAllItems.firstOrNull { it.id == id }
-                ?: st.todayItems.firstOrNull { it.id == id }
-                ?: return@withState
+        val state = _state.value
+        val item = state.totalAllItems.firstOrNull { it.id == id }
+            ?: state.todayItems.firstOrNull { it.id == id }
+            ?: return
 
-            val current = item.current ?: 0
-            val target = item.target ?: current
+        val current = item.current ?: 0
+        val target = item.target ?: current
 
-            val next = (current + 1).coerceAtMost(target)
-            if (next == current) return@withState
+        val next = (current + 1).coerceAtMost(target)
+        if (next == current) return
 
+        val reachedTarget = next >= target
+        applyGoalIncrement(id = id, nextValue = next, markDone = reachedTarget)
+    }
 
-            val reachedTarget = next >= target
-            applyGoalIncrement(id = id, nextValue = next, markDone = reachedTarget)
+    fun onDecrementGoal(id: String) {
+        val state = _state.value
+        val item = state.totalAllItems.firstOrNull { it.id == id }
+            ?: state.todayItems.firstOrNull { it.id == id }
+            ?: return
+
+        val current = item.current ?: 0
+        val next = (current - 1).coerceAtLeast(0)
+        if (next == current) return
+
+        applyGoalDecrement(id = id, nextValue = next)
+    }
+
+    fun onUncomplete(id: String) {
+        val state = _state.value
+        val item = state.totalAllItems.firstOrNull { it.id == id }
+            ?: state.todayItems.firstOrNull { it.id == id }
+            ?: return
+
+        if (!item.isDone) return
+
+        _state.update { it.copy(hiddenIds = it.hiddenIds - id) }
+
+        viewModelScope.launch {
+            setDoneUseCase(id = id, isDone = false, now = System.currentTimeMillis())
+            _events.trySend(HomeEvent.ShowUndoUncompleteTodo(item))
+        }
+    }
+
+    fun undoUncomplete(id: String) {
+        viewModelScope.launch {
+            setDoneUseCase(id = id, isDone = true, now = System.currentTimeMillis())
         }
     }
 
     private fun applyGoalIncrement(id: String, nextValue: Int, markDone: Boolean) {
-        setState {
+        _state.update { current ->
             val newToday =
-                if (markDone) todayItems.filterNot { it.id == id }
-                else todayItems.map { if (it.id == id) it.copy(current = nextValue) else it }
+                if (markDone) current.todayItems.filterNot { it.id == id }
+                else current.todayItems.map { if (it.id == id) it.copy(current = nextValue) else it }
 
             val newTotalAll =
-                if (markDone) totalAllItems.filterNot { it.id == id }
-                else totalAllItems.map { if (it.id == id) it.copy(current = nextValue) else it }
+                if (markDone) current.totalAllItems.filterNot { it.id == id }
+                else current.totalAllItems.map { if (it.id == id) it.copy(current = nextValue) else it }
 
-            copy(
+            current.copy(
                 todayItems = newToday,
                 totalAllItems = newTotalAll,
                 totalItems = applyFilters(
                     all = newTotalAll,
-                    hiddenIds = hiddenIds,
-                    query = query,
-                    filterType = filterType,
-                    sort = sort
+                    hiddenIds = current.hiddenIds,
+                    query = current.query,
+                    filterType = current.filterType,
+                    sort = current.sort,
+                    doneOnly = current.doneOnly
                 )
             )
         }
@@ -191,9 +191,8 @@ class HomeViewModel(
             val now = System.currentTimeMillis()
             val epochDay = java.time.LocalDate.now().toEpochDay()
 
-            // 1) registrar evento (delta = +1 típicamente)
-            repo.insertGoalProgressEvent(
-                GoalProgressEventEntity(
+            insertGoalProgressEventUseCase(
+                GoalProgressEvent(
                     id = UUID.randomUUID().toString(),
                     goalId = id,
                     delta = 1,
@@ -202,11 +201,10 @@ class HomeViewModel(
                 )
             )
 
-            // 2) actualizar snapshot del goal
-            repo.setCurrent(id = id, current = nextValue, now = now)
+            setCurrentUseCase(id = id, current = nextValue, now = now)
 
             if (markDone) {
-                repo.setDone(id = id, isDone = true, now = now) // si agregaste doneAt
+                setDoneUseCase(id = id, isDone = true, now = now)
             }
         }
     }
@@ -214,19 +212,20 @@ class HomeViewModel(
     private fun removeTodoWithUndo(todo: TodayItemUiModel) {
         if (todo.isDone) return
 
-        setState {
-            val newHidden = hiddenIds + todo.id
-
-            copy(
+        _state.update { current ->
+            val newHidden = current.hiddenIds + todo.id
+            val newTotalAll = current.totalAllItems.filterNot { it.id == todo.id }
+            current.copy(
                 hiddenIds = newHidden,
-                todayItems = todayItems.filterNot { it.id == todo.id },
-                totalAllItems = totalAllItems.filterNot { it.id == todo.id },
+                todayItems = current.todayItems.filterNot { it.id == todo.id },
+                totalAllItems = newTotalAll,
                 totalItems = applyFilters(
-                    all = totalAllItems.filterNot { it.id == todo.id },
+                    all = newTotalAll,
                     hiddenIds = newHidden,
-                    query = query,
-                    filterType = filterType,
-                    sort = sort
+                    query = current.query,
+                    filterType = current.filterType,
+                    sort = current.sort,
+                    doneOnly = current.doneOnly
                 )
             )
         }
@@ -255,25 +254,20 @@ class HomeViewModel(
                 val top = removedStack.removeLast()
                 val now = System.currentTimeMillis()
 
-                // Persistimos el done en DB
-                repo.setDone(top.id, true, now)
+                setDoneUseCase(id = top.id, isDone = true, now = now)
 
-                // Quitamos el hidden overlay (ya quedó confirmado)
-                setState {
-                    val newHidden = hiddenIds - top.id
-
-                    // Nota: aquí NO reinsertamos nada; solo recalculamos totalItems
-                    // totalAllItems ya no contiene el item porque lo removiste optimistamente.
-                    copy(
+                _state.update { current ->
+                    val newHidden = current.hiddenIds - top.id
+                    current.copy(
                         hiddenIds = newHidden,
                         totalItems = applyFilters(
-                            all = totalAllItems,
+                            all = current.totalAllItems,
                             hiddenIds = newHidden,
-                            query = query,
-                            filterType = filterType,
-                            sort = sort
+                            query = current.query,
+                            filterType = current.filterType,
+                            sort = current.sort,
+                            doneOnly = current.doneOnly
                         )
-                        // todayItems se reconstruirá por repo.tasksState, no hace falta tocarlo
                     )
                 }
 
@@ -292,24 +286,23 @@ class HomeViewModel(
         confirmTopJob?.cancel()
         confirmTopJob = null
 
-        setState {
-            val newHidden = hiddenIds - todoId
-
+        _state.update { current ->
+            val newHidden = current.hiddenIds - todoId
             val newTotalAll =
-                if (totalAllItems.none { it.id == todoId }) totalAllItems + top.copy(isDone = false)
-                else totalAllItems
+                if (current.totalAllItems.none { it.id == todoId }) current.totalAllItems + top.copy(isDone = false)
+                else current.totalAllItems
 
-            copy(
+            current.copy(
                 hiddenIds = newHidden,
                 totalAllItems = newTotalAll,
                 totalItems = applyFilters(
                     all = newTotalAll,
                     hiddenIds = newHidden,
-                    query = query,
-                    filterType = filterType,
-                    sort = sort
+                    query = current.query,
+                    filterType = current.filterType,
+                    sort = current.sort,
+                    doneOnly = current.doneOnly
                 )
-                // todayItems NO lo forzamos aquí: lo reconstruye repo.tasksState
             )
         }
 
@@ -320,11 +313,51 @@ class HomeViewModel(
     }
 
     fun onQueryChanged(value: String) {
-        setState {
-            copy(
+        _state.update { current ->
+            current.copy(
                 query = value,
-                totalItems = applyFilters(totalAllItems, hiddenIds, value, filterType, sort)
+                totalItems = applyFilters(current.totalAllItems, current.hiddenIds, value, current.filterType, current.sort, current.doneOnly)
             )
+        }
+    }
+
+    private fun applyGoalDecrement(id: String, nextValue: Int) {
+        _state.update { current ->
+            val newToday =
+                current.todayItems.map { if (it.id == id) it.copy(current = nextValue) else it }
+
+            val newTotalAll =
+                current.totalAllItems.map { if (it.id == id) it.copy(current = nextValue) else it }
+
+            current.copy(
+                todayItems = newToday,
+                totalAllItems = newTotalAll,
+                totalItems = applyFilters(
+                    all = newTotalAll,
+                    hiddenIds = current.hiddenIds,
+                    query = current.query,
+                    filterType = current.filterType,
+                    sort = current.sort,
+                    doneOnly = current.doneOnly
+                )
+            )
+        }
+
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            val epochDay = java.time.LocalDate.now().toEpochDay()
+
+            insertGoalProgressEventUseCase(
+                GoalProgressEvent(
+                    id = UUID.randomUUID().toString(),
+                    goalId = id,
+                    delta = -1,
+                    timestamp = now,
+                    epochDay = epochDay
+                )
+            )
+
+            setCurrentUseCase(id = id, current = nextValue, now = now)
         }
     }
 
@@ -333,9 +366,17 @@ class HomeViewModel(
         hiddenIds: Set<String>,
         query: String,
         filterType: TaskFilterType,
-        sort: TaskSort
+        sort: TaskSort,
+        doneOnly: Boolean
     ): List<TodayItemUiModel> {
         var seq = all.asSequence().filterNot { it.id in hiddenIds }
+
+        seq =
+            if (doneOnly) {
+                seq.filter { it.isDone }
+            } else {
+                seq.filter { !it.isDone }
+            }
 
         seq =
             when (filterType) {
@@ -359,19 +400,27 @@ class HomeViewModel(
     }
 
     fun applyFilters(type: TaskFilterType, sort: TaskSort) {
-        setState {
-            copy(
+        _state.update { current ->
+            current.copy(
                 filterType = type,
                 sort = sort,
-                totalItems = applyFilters(totalAllItems, hiddenIds, query, type, sort)
+                totalItems = applyFilters(current.totalAllItems, current.hiddenIds, current.query, type, sort, current.doneOnly)
             )
         }
     }
 
-    private fun todayEpochDay(): Long {
-        return java.time.LocalDate.now().toEpochDay()
+    fun applyFilters(type: TaskFilterType, sort: TaskSort, doneOnly: Boolean) {
+        _state.update { current ->
+            current.copy(
+                filterType = type,
+                sort = sort,
+                doneOnly = doneOnly,
+                totalItems = applyFilters(current.totalAllItems, current.hiddenIds, current.query, type, sort, doneOnly)
+            )
+        }
     }
 
+    private fun todayEpochDay(): Long = java.time.LocalDate.now().toEpochDay()
 
     override fun onCleared() {
         confirmTopJob?.cancel()
