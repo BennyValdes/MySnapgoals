@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mysnapgoals.app.ui.home.components.CalendarBanner
@@ -37,6 +38,7 @@ import com.mysnapgoals.app.ui.home.state.HomeEvent
 import com.mysnapgoals.app.ui.home.state.HomeState
 import com.mysnapgoals.app.ui.home.state.TaskFilterType
 import com.mysnapgoals.app.ui.home.state.TaskSort
+import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -170,7 +172,7 @@ fun HomeContent(
     onDismissAddTodo: () -> Unit,
     onDismissAddGoal: () -> Unit,
     onDismissFilterSheet: () -> Unit,
-    onAddTodo: (String) -> Unit,
+    onAddTodo: (String, Long) -> Unit,
     onAddGoal: (String, Int) -> Unit,
     onApplyFilters: (TaskFilterType, TaskSort, Boolean) -> Unit,
     onClearFilters: () -> Unit,
@@ -184,8 +186,8 @@ fun HomeContent(
     if (showAddTodo) {
         AddTodoComponent(
             onDismiss = onDismissAddTodo,
-            onConfirm = { title ->
-                onAddTodo(title)
+            onConfirm = { title, scheduledDay ->
+                onAddTodo(title, scheduledDay)
                 onDismissAddTodo()
             }
         )
@@ -275,6 +277,78 @@ fun HomeContent(
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+@Preview(showSystemUi = true)
+fun HomeContentPreview() {
+    SnapGoalsTheme {
+        HomeContent(
+            state = HomeState(
+                todayItems = listOf(
+                    com.mysnapgoals.app.ui.home.components.TodayItemUiModel(
+                        id = "1",
+                        type = TodayItemType.TODO,
+                        title = "Leer 10 paginas",
+                        isDone = false
+                    ),
+                    com.mysnapgoals.app.ui.home.components.TodayItemUiModel(
+                        id = "2",
+                        type = TodayItemType.GOAL,
+                        title = "Meditacion",
+                        isDone = false,
+                        current = 2,
+                        target = 5
+                    )
+                ),
+                totalAllItems = emptyList(),
+                totalItems = listOf(
+                    com.mysnapgoals.app.ui.home.components.TodayItemUiModel(
+                        id = "3",
+                        type = TodayItemType.TODO,
+                        title = "Caminar 20 min",
+                        isDone = true
+                    )
+                ),
+                query = "",
+                filterType = TaskFilterType.ALL,
+                sort = TaskSort.RECENT,
+                doneOnly = false
+            ),
+            statsState = HomeStatsState(
+                dayPercent = 40,
+                weekPercent = 55,
+                monthPercent = 20,
+                yearPercent = 10
+            ),
+            calendarState = CalendarBannerState(
+                timeText = "09:21",
+                dayOfWeekText = "Lunes",
+                dateText = "2026/01/31"
+            ),
+            snackbarHostState = androidx.compose.material3.SnackbarHostState(),
+            scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState()),
+            showAddTodo = false,
+            showAddGoal = false,
+            showFilterSheet = false,
+            onShowAddTodo = {},
+            onShowAddGoal = {},
+            onDismissAddTodo = {},
+            onDismissAddGoal = {},
+            onDismissFilterSheet = {},
+            onAddTodo = { _, _ -> },
+            onAddGoal = { _, _ -> },
+            onApplyFilters = { _, _, _ -> },
+            onClearFilters = {},
+            onQueryChanged = {},
+            onToggleDone = {},
+            onIncrementGoal = {},
+            onDecrementGoal = {},
+            onUncomplete = {},
+            onShowFilters = {}
+        )
     }
 }
 

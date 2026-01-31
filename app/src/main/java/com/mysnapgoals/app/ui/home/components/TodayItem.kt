@@ -25,7 +25,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.mysnapgoals.app.R
+import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
 enum class TodayItemType {
     TODO,
@@ -156,5 +158,47 @@ fun TodayItem(
             }
 
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TodayItemTodoPreview() {
+    SnapGoalsTheme {
+        TodayItem(
+            model = TodayItemUiModel(
+                id = "1",
+                type = TodayItemType.TODO,
+                title = "Read 10 pages",
+                isDone = false
+            ),
+            onToggleDone = {},
+            onIncrement = {},
+            onDecrement = {},
+            onUncomplete = {},
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TodayItemGoalPreview() {
+    SnapGoalsTheme {
+        TodayItem(
+            model = TodayItemUiModel(
+                id = "2",
+                type = TodayItemType.GOAL,
+                title = "Meditation",
+                isDone = false,
+                current = 2,
+                target = 5
+            ),
+            onToggleDone = {},
+            onIncrement = {},
+            onDecrement = {},
+            onUncomplete = {},
+            modifier = Modifier.padding(16.dp)
+        )
     }
 }

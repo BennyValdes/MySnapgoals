@@ -86,9 +86,9 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun addTodo(title: String) {
+    fun addTodo(title: String, scheduledDay: Long) {
         viewModelScope.launch {
-            addTodoUseCase(title = title, scheduledDay = todayEpochDay())
+            addTodoUseCase(title = title, scheduledDay = scheduledDay)
         }
     }
 

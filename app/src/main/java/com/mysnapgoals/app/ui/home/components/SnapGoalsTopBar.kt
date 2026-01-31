@@ -10,11 +10,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.style.TextOverflow
 import com.mysnapgoals.app.R
+import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,4 +53,15 @@ fun SnapGoalsTopBar(scrollBehavior: TopAppBarScrollBehavior) {
         },
         scrollBehavior = scrollBehavior,
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
+@Composable
+fun SnapGoalsTopBarPreview() {
+    SnapGoalsTheme {
+        SnapGoalsTopBar(
+            scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+        )
+    }
 }
