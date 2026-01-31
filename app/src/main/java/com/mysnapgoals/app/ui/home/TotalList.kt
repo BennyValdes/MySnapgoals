@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.mysnapgoals.app.ui.home.components.TodayItem
@@ -61,15 +62,19 @@ fun TotalList(
                 style = MaterialTheme.typography.bodyMedium,
             )
         } else {
-            ordered.forEach { item ->
-                TodayItem(
-                    model = item,
-                    onToggleDone = onToggleDone,
-                    onIncrement = onIncrementGoal,
-                    onDecrement = onDecrementGoal,
-                    onUncomplete = onUncomplete,
-                    onItemClick = onItemClick
-                )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ordered.forEach { item ->
+                    TodayItem(
+                        model = item,
+                        onToggleDone = onToggleDone,
+                        onIncrement = onIncrementGoal,
+                        onDecrement = onDecrementGoal,
+                        onUncomplete = onUncomplete,
+                        onItemClick = onItemClick
+                    )
+                }
             }
         }
     }
