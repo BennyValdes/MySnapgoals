@@ -54,15 +54,12 @@ class TasksRepositoryImpl(
     override fun observeGoalProgressEvents(): Flow<List<GoalProgressEvent>> =
         goalEventDao.observeAll().map { list -> list.map { it.toDomain() } }
 
-    // Global (todas las metas)
     override suspend fun sumGoalsDeltaBetweenDays(startDay: Long, endDay: Long): Int =
         goalEventDao.sumDeltaBetweenDays(startDay, endDay)
 
-    // Por goalId (si lo necesitas despues)
     override suspend fun sumDeltaForGoalBetweenDays(goalId: String, startDay: Long, endDay: Long): Int =
         goalEventDao.sumDeltaForGoalBetweenDays(goalId, startDay, endDay)
 
-    // Por varios goalId (para evitar N queries)
     override suspend fun sumDeltaForGoalsBetweenDays(goalIds: List<String>, startDay: Long, endDay: Long): Int =
         if (goalIds.isEmpty()) 0 else goalEventDao.sumDeltaForGoalsBetweenDays(goalIds, startDay, endDay)
 

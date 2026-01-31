@@ -21,7 +21,11 @@ import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SnapGoalsTopBar(scrollBehavior: TopAppBarScrollBehavior) {
+fun SnapGoalsTopBar(
+    scrollBehavior: TopAppBarScrollBehavior,
+    onProfileClick: () -> Unit = {},
+    onMenuClick: () -> Unit = {}
+) {
     CenterAlignedTopAppBar(
         title = {
             Text(
@@ -35,7 +39,7 @@ fun SnapGoalsTopBar(scrollBehavior: TopAppBarScrollBehavior) {
             scrolledContainerColor = MaterialTheme.colorScheme.background
         ),
         navigationIcon = {
-            IconButton(onClick = { /* do something */ }) {
+            IconButton(onClick = onProfileClick) {
                 Icon(
                     painter = painterResource(R.drawable.maleavatar),
                     contentDescription = "Profile Icon",
@@ -44,7 +48,7 @@ fun SnapGoalsTopBar(scrollBehavior: TopAppBarScrollBehavior) {
             }
         },
         actions = {
-            IconButton(onClick = { /* do something */ }) {
+            IconButton(onClick = onMenuClick) {
                 Icon(
                     imageVector = Icons.Filled.Menu,
                     contentDescription = "Menu"

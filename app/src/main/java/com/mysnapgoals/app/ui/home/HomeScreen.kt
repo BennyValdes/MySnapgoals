@@ -11,6 +11,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,6 +36,7 @@ import com.mysnapgoals.app.ui.home.components.FilterLine
 import com.mysnapgoals.app.ui.home.components.PercentageLine
 import com.mysnapgoals.app.ui.home.components.SnapGoalsTopBar
 import com.mysnapgoals.app.ui.home.components.TodayItemType
+import com.mysnapgoals.app.ui.home.components.TodayItemUiModel
 import com.mysnapgoals.app.ui.home.state.HomeEvent
 import com.mysnapgoals.app.ui.home.state.HomeState
 import com.mysnapgoals.app.ui.home.state.TaskFilterType
@@ -170,7 +172,7 @@ fun HomeContent(
     statsState: HomeStatsState,
     calendarState: CalendarBannerState,
     snackbarHostState: SnackbarHostState,
-    scrollBehavior: androidx.compose.material3.TopAppBarScrollBehavior,
+    scrollBehavior: TopAppBarScrollBehavior,
     showAddTodo: Boolean,
     showAddGoal: Boolean,
     showFilterSheet: Boolean,
@@ -215,7 +217,7 @@ fun HomeContent(
         )
     }
 
-    val editingItem = state.totalAllItems.firstOrNull { it.id == editingItemId }
+    val editingItem = state.allItems.firstOrNull { it.id == editingItemId }
     if (editingItem != null) {
         if (editingItem.type == TodayItemType.TODO) {
             EditTodoComponent(
@@ -244,8 +246,8 @@ fun HomeContent(
     if (showFilterSheet) {
         FilterSheet(
             initialFilterType = state.filterType,
-            initialSort = state.sort,
-            initialDoneOnly = state.doneOnly,
+            initialSort = state.sortOrder,
+            initialDoneOnly = state.showDoneOnly,
             onApply = onApplyFilters,
             onClear = onClearFilters,
             onDismiss = onDismissFilterSheet
@@ -328,7 +330,7 @@ fun HomeContent(
             }
             item {
                 TotalList(
-                    items = state.totalItems,
+                    items = state.filteredItems,
                     onToggleDone = onToggleDone,
                     onIncrementGoal = onIncrementGoal,
                     onDecrementGoal = onDecrementGoal,
@@ -348,13 +350,13 @@ fun HomeContentPreview() {
         HomeContent(
             state = HomeState(
                 todayItems = listOf(
-                    com.mysnapgoals.app.ui.home.components.TodayItemUiModel(
+                    TodayItemUiModel(
                         id = "1",
                         type = TodayItemType.TODO,
                         title = "Leer 10 paginas",
                         isDone = false
                     ),
-                    com.mysnapgoals.app.ui.home.components.TodayItemUiModel(
+                    TodayItemUiModel(
                         id = "2",
                         type = TodayItemType.GOAL,
                         title = "Meditacion",
@@ -363,9 +365,9 @@ fun HomeContentPreview() {
                         target = 5
                     )
                 ),
-                totalAllItems = emptyList(),
-                totalItems = listOf(
-                    com.mysnapgoals.app.ui.home.components.TodayItemUiModel(
+                allItems = emptyList(),
+                filteredItems = listOf(
+                    TodayItemUiModel(
                         id = "3",
                         type = TodayItemType.TODO,
                         title = "Caminar 20 min",
@@ -374,8 +376,8 @@ fun HomeContentPreview() {
                 ),
                 query = "",
                 filterType = TaskFilterType.ALL,
-                sort = TaskSort.RECENT,
-                doneOnly = false
+                sortOrder = TaskSort.RECENT,
+                showDoneOnly = false
             ),
             statsState = HomeStatsState(
                 dayCompleted = 40,
@@ -408,7 +410,7 @@ fun HomeContentPreview() {
                 dayOfWeekText = "Lunes",
                 dateText = "2026/01/31"
             ),
-            snackbarHostState = androidx.compose.material3.SnackbarHostState(),
+            snackbarHostState = SnackbarHostState(),
             scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState()),
             showAddTodo = false,
             showAddGoal = false,
@@ -436,4 +438,3 @@ fun HomeContentPreview() {
         )
     }
 }
-

@@ -18,21 +18,21 @@ private val DarkColorScheme = darkColorScheme(
 
     primary = BlueFantastic,
     onPrimary = Beige,
-    primaryContainer = DarkJungle, // Filter Buttons and Text
+    primaryContainer = DarkJungle,
     onPrimaryContainer = Beige,
 
     secondary = Charcoal,
     onSecondary = Beige,
-    secondaryContainer = DarkJungle,     // Button background
-    onSecondaryContainer = Beige,        // IMPORTANTE
+    secondaryContainer = DarkJungle,
+    onSecondaryContainer = Beige,
 
     tertiary = BlueAbyssal,
     onTertiary = Beige,
-    tertiaryContainer = Charcoal,        // IMPORTANTE
-    onTertiaryContainer = Beige,         // IMPORTANTE
+    tertiaryContainer = Charcoal,
+    onTertiaryContainer = Beige,
 
-    surfaceVariant = BlueAbyssal,        // Plus button
-    onSurfaceVariant = Beige,            // IMPORTANTE
+    surfaceVariant = BlueAbyssal,
+    onSurfaceVariant = Beige,
 
     outline = Beige.copy(alpha = 0.8f),
     outlineVariant = Beige.copy(alpha = 0.55f)
@@ -51,25 +51,24 @@ private val LightColorScheme = lightColorScheme(
 
     secondary = Pebble,
     onSecondary = Graphite,
-    secondaryContainer = Sand,                // IMPORTANTE
-    onSecondaryContainer = Graphite,          // IMPORTANTE
+    secondaryContainer = Sand,
+    onSecondaryContainer = Graphite,
 
     tertiary = Rose,
     onTertiary = Graphite,
-    tertiaryContainer = NearWhite,           // IMPORTANTE
-    onTertiaryContainer = Graphite,           // IMPORTANTE
+    tertiaryContainer = NearWhite,
+    onTertiaryContainer = Graphite,
 
-    surfaceVariant = Sand,                    // IMPORTANTE (CalendarBanner/PercentageLine)
-    onSurfaceVariant = Graphite,              // IMPORTANTE
+    surfaceVariant = Sand,
+    onSurfaceVariant = Graphite,
 
     outline = Graphite,
-    outlineVariant = Graphite.copy(alpha = 0.45f) // opcional pero recomendado
+    outlineVariant = Graphite.copy(alpha = 0.45f)
 )
 
 @Composable
 fun SnapGoalsTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -89,3 +88,4 @@ fun SnapGoalsTheme(
         content = content
     )
 }
+

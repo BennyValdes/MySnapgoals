@@ -38,7 +38,7 @@ fun DropDownMenu(
         modifier = modifier,
         shape = shape,
         color = Color(0xFFF6EFE6),
-        shadowElevation = 18.dp, // CLAVE para “botado”
+        shadowElevation = 18.dp,
         tonalElevation = 0.dp,
         onClick = onClick
     ) {
@@ -53,7 +53,6 @@ fun DropDownMenu(
                         shape = shape
                     )
         ) {
-            // Highlight superior (efecto glass / lift)
             Box(
                 modifier =
                     Modifier
@@ -80,8 +79,6 @@ fun DropDownMenu(
                         .align(Alignment.CenterStart)
                         .padding(start = 20.dp)
             )
-
-            // Right floating circle
             Box(
                 modifier =
                     Modifier
@@ -107,6 +104,7 @@ fun DropDownMenu(
 
 @Composable
 @Preview
-fun previewDropDownMenu(){
+fun PreviewDropDownMenu() {
     DropDownMenu() { }
 }
+

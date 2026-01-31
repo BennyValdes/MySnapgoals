@@ -52,7 +52,6 @@ fun TodayLine(
                 fontWeight = FontWeight.SemiBold
             )
 
-            // Contador simple: pendientes/total
             if (total > 0) {
                 Text(
                     text = "$pending/$total",

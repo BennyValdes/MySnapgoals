@@ -50,7 +50,6 @@ fun Button3D(
             .wrapContentWidth(),
         contentAlignment = Alignment.TopCenter
     ) {
-        // Base (grosor)
         Box(
             modifier = Modifier
                 .offset(y = depth)
@@ -62,7 +61,6 @@ fun Button3D(
                 )
         )
 
-        // Cara superior
         Box(
             modifier = Modifier
                 .offset(y = if (pressed) depth else 0.dp)

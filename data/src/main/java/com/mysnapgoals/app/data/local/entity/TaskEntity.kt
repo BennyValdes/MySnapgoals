@@ -7,12 +7,12 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "tasks")
 data class TaskEntity(
     @PrimaryKey val id: String,
-    val type: Int, // 0 TODO, 1 GOAL
+    val type: Int,
     val title: String,
     val isDone: Boolean,
-    val scheduledDay: Long?, // LocalDate.toEpochDay(), null = sin fecha (MVP: tratamos null como "hoy")
+    val scheduledDay: Long?,
     val createdAt: Long,
-    val updatedAt: Long?, // Solo GOAL (nullable para TODO)
+    val updatedAt: Long?,
     val current: Int?,
     val target: Int?,
     val doneAt: Long?,
@@ -35,7 +35,8 @@ data class TaskEntity(
 data class GoalProgressEventEntity(
     @PrimaryKey val id: String,
     val goalId: String,
-    val delta: Int,          // normalmente +1
-    val timestamp: Long,     // System.currentTimeMillis()
-    val epochDay: Long       // LocalDate.now().toEpochDay() (para queries rápidas)
+    val delta: Int,
+    val timestamp: Long,
+    val epochDay: Long
 )
+

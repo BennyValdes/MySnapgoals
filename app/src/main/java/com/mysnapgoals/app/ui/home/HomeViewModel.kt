@@ -35,7 +35,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val observeTasks: ObserveTasksUseCase,
@@ -54,12 +53,12 @@ class HomeViewModel @Inject constructor(
     private val _events = Channel<HomeEvent>(capacity = Channel.BUFFERED)
     val events = _events.receiveAsFlow()
 
-    private val dayTick = MutableStateFlow(todayEpochDay())
+    private val todayEpochDayFlow = MutableStateFlow(todayEpochDay())
 
-    private val removedStack = ArrayDeque<TodayItemUiModel>()
-    private var confirmTopJob: Job? = null
+    private val removedTodosStack = ArrayDeque<TodayItemUiModel>()
+    private var confirmRemovalJob: Job? = null
     private val defaultGoalPeriodicity = GoalPeriodicity.MONTHLY
-    private var taskById: Map<String, Task> = emptyMap()
+    private var tasksById: Map<String, Task> = emptyMap()
 
     init {
         viewModelScope.launch {
@@ -68,7 +67,7 @@ class HomeViewModel @Inject constructor(
                 val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
                 val delayMs = java.time.Duration.between(now, nextMidnight).toMillis().coerceAtLeast(0)
                 delay(delayMs)
-                dayTick.value = todayEpochDay()
+                todayEpochDayFlow.value = todayEpochDay()
             }
         }
 
@@ -76,14 +75,14 @@ class HomeViewModel @Inject constructor(
             combine(
                 observeTasks(),
                 observeGoalProgressEventsUseCase(),
-                dayTick
+                todayEpochDayFlow
             ) { tasks, _, _ -> tasks }
                 .collect { entities ->
                 val today = todayEpochDay()
                 val goalProgressToday = mutableMapOf<String, Int>()
                 val goalProgressCurrent = mutableMapOf<String, Int>()
                 val goalTargetCurrent = mutableMapOf<String, Int>()
-                taskById = entities.associateBy { it.id }
+                tasksById = entities.associateBy { it.id }
 
                 for (goal in entities.filter { it.type == TaskType.GOAL }) {
                     val periodicity = goal.periodicity ?: defaultGoalPeriodicity
@@ -97,7 +96,7 @@ class HomeViewModel @Inject constructor(
                 }
 
                 _state.update { current ->
-                    val todaySource =
+                    val todayItems =
                         entities.asSequence()
                             .filter { !it.isDone }
                             .filter { (it.scheduledDay ?: today) == today }
@@ -118,12 +117,11 @@ class HomeViewModel @Inject constructor(
                                 val progressCurrent = goalProgressCurrent[item.id] ?: 0
                                 progressToday > 0 || (target > 0 && progressCurrent >= target)
                             }
-                            .filterNot { it.id in current.hiddenIds } // respeta undo overlay
+                            .filterNot { it.id in current.hiddenItemIds }
                             .toList()
 
-                        val totalSource =
-                            entities.asSequence()
-                            // si quieres incluir tambien scheduledDay==null o cualquier dia, aqui es donde se define
+                    val allItems =
+                        entities.asSequence()
                             .map { task ->
                                 val base = task.toUiModel()
                                 if (task.type == TaskType.GOAL) {
@@ -133,23 +131,23 @@ class HomeViewModel @Inject constructor(
                                 } else {
                                     base
                                 }
-                                }
-                                .filterNot { it.id in current.hiddenIds }
-                                .toList()
+                            }
+                            .filterNot { it.id in current.hiddenItemIds }
+                            .toList()
 
-                        current.copy(
-                            todayItems = todaySource,
-                            totalAllItems = totalSource,
-                            totalItems = applyFilters(
-                                all = totalSource,
-                                hiddenIds = current.hiddenIds,
-                                query = current.query,
-                                filterType = current.filterType,
-                                sort = current.sort,
-                                doneOnly = current.doneOnly
-                            )
+                    current.copy(
+                        todayItems = todayItems,
+                        allItems = allItems,
+                        filteredItems = filterItems(
+                            all = allItems,
+                            hiddenItemIds = current.hiddenItemIds,
+                            query = current.query,
+                            filterType = current.filterType,
+                            sortOrder = current.sortOrder,
+                            showDoneOnly = current.showDoneOnly
                         )
-                    }
+                    )
+                }
                 }
         }
     }
@@ -172,7 +170,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun updateTodo(id: String, title: String, scheduledDay: Long) {
-        val task = taskById[id] ?: return
+        val task = tasksById[id] ?: return
         if (task.type != TaskType.TODO) return
         viewModelScope.launch {
             updateTaskUseCase(
@@ -185,7 +183,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun updateGoal(id: String, title: String, periodicity: GoalPeriodicity, dueDay: Long) {
-        val task = taskById[id] ?: return
+        val task = tasksById[id] ?: return
         if (task.type != TaskType.GOAL) return
         viewModelScope.launch {
             updateTaskUseCase(
@@ -200,21 +198,17 @@ class HomeViewModel @Inject constructor(
 
     fun onToggleDone(id: String) {
         val state = _state.value
-        val item = state.totalAllItems.firstOrNull { it.id == id }
+        val item = state.allItems.firstOrNull { it.id == id }
             ?: state.todayItems.firstOrNull { it.id == id }
             ?: return
 
-        if (item.type == TodayItemType.TODO) {
-            removeTodoWithUndo(item)
-        } else {
-            // Por ahora no removemos goals.
-            // Cuando quieras: toggle done en DB.
-        }
+        if (item.type != TodayItemType.TODO) return
+        removeTodoWithUndo(item)
     }
 
     fun onIncrementGoal(id: String) {
         val state = _state.value
-        val item = state.totalAllItems.firstOrNull { it.id == id }
+        val item = state.allItems.firstOrNull { it.id == id }
             ?: state.todayItems.firstOrNull { it.id == id }
             ?: return
 
@@ -229,7 +223,7 @@ class HomeViewModel @Inject constructor(
 
     fun onDecrementGoal(id: String) {
         val state = _state.value
-        val item = state.totalAllItems.firstOrNull { it.id == id }
+        val item = state.allItems.firstOrNull { it.id == id }
             ?: state.todayItems.firstOrNull { it.id == id }
             ?: return
 
@@ -243,13 +237,13 @@ class HomeViewModel @Inject constructor(
 
     fun onUncomplete(id: String) {
         val state = _state.value
-        val item = state.totalAllItems.firstOrNull { it.id == id }
+        val item = state.allItems.firstOrNull { it.id == id }
             ?: state.todayItems.firstOrNull { it.id == id }
             ?: return
 
         if (!item.isDone) return
 
-        _state.update { it.copy(hiddenIds = it.hiddenIds - id) }
+        _state.update { it.copy(hiddenItemIds = it.hiddenItemIds - id) }
 
         viewModelScope.launch {
             setDoneUseCase(id = id, isDone = false, now = System.currentTimeMillis())
@@ -284,102 +278,112 @@ class HomeViewModel @Inject constructor(
         if (todo.isDone) return
 
         _state.update { current ->
-            val newHidden = current.hiddenIds + todo.id
-            val newTotalAll = current.totalAllItems.filterNot { it.id == todo.id }
+            val newHidden = current.hiddenItemIds + todo.id
+            val newAllItems = current.allItems.filterNot { it.id == todo.id }
             current.copy(
-                hiddenIds = newHidden,
+                hiddenItemIds = newHidden,
                 todayItems = current.todayItems.filterNot { it.id == todo.id },
-                totalAllItems = newTotalAll,
-                totalItems = applyFilters(
-                    all = newTotalAll,
-                    hiddenIds = newHidden,
+                allItems = newAllItems,
+                filteredItems = filterItems(
+                    all = newAllItems,
+                    hiddenItemIds = newHidden,
                     query = current.query,
                     filterType = current.filterType,
-                    sort = current.sort,
-                    doneOnly = current.doneOnly
+                    sortOrder = current.sortOrder,
+                    showDoneOnly = current.showDoneOnly
                 )
             )
         }
 
-        removedStack.addLast(todo.copy(isDone = true))
-        emitSnackbarForTop()
-        scheduleTopConfirmation()
+        removedTodosStack.addLast(todo.copy(isDone = true))
+        emitUndoRemovedTodo()
+        scheduleRemovalConfirmation()
     }
 
-    private fun emitSnackbarForTop() {
-        val top = removedStack.lastOrNull() ?: return
+    private fun emitUndoRemovedTodo() {
+        val top = removedTodosStack.lastOrNull() ?: return
         _events.trySend(HomeEvent.ShowUndoRemovedTodo(top))
     }
 
-    private fun scheduleTopConfirmation() {
-        confirmTopJob?.cancel()
-        val expectedId = removedStack.lastOrNull()?.id ?: return
+    private fun scheduleRemovalConfirmation() {
+        confirmRemovalJob?.cancel()
+        val expectedId = removedTodosStack.lastOrNull()?.id ?: return
 
-        confirmTopJob =
+        confirmRemovalJob =
             viewModelScope.launch {
                 delay(3_000)
 
-                val currentTop = removedStack.lastOrNull()
+                val currentTop = removedTodosStack.lastOrNull()
                 if (currentTop?.id != expectedId) return@launch
 
-                val top = removedStack.removeLast()
+                val top = removedTodosStack.removeLast()
                 val now = System.currentTimeMillis()
 
                 setDoneUseCase(id = top.id, isDone = true, now = now)
 
                 _state.update { current ->
-                    val newHidden = current.hiddenIds - top.id
+                    val newHidden = current.hiddenItemIds - top.id
                     current.copy(
-                        hiddenIds = newHidden,
-                        totalItems = applyFilters(
-                            all = current.totalAllItems,
-                            hiddenIds = newHidden,
+                        hiddenItemIds = newHidden,
+                        filteredItems = filterItems(
+                            all = current.allItems,
+                            hiddenItemIds = newHidden,
                             query = current.query,
                             filterType = current.filterType,
-                            sort = current.sort,
-                            doneOnly = current.doneOnly
+                            sortOrder = current.sortOrder,
+                            showDoneOnly = current.showDoneOnly
                         )
                     )
                 }
 
-                if (removedStack.isNotEmpty()) {
-                    emitSnackbarForTop()
-                    scheduleTopConfirmation()
+                if (removedTodosStack.isNotEmpty()) {
+                    emitUndoRemovedTodo()
+                    scheduleRemovalConfirmation()
                 }
             }
     }
 
     fun undoRemoveTodo(todoId: String) {
-        val top = removedStack.lastOrNull() ?: return
+        val top = removedTodosStack.lastOrNull() ?: return
         if (top.id != todoId) return
 
-        removedStack.removeLast()
-        confirmTopJob?.cancel()
-        confirmTopJob = null
+        removedTodosStack.removeLast()
+        confirmRemovalJob?.cancel()
+        confirmRemovalJob = null
 
         _state.update { current ->
-            val newHidden = current.hiddenIds - todoId
-            val newTotalAll =
-                if (current.totalAllItems.none { it.id == todoId }) current.totalAllItems + top.copy(isDone = false)
-                else current.totalAllItems
+            val newHidden = current.hiddenItemIds - todoId
+            val restoredTodo = top.copy(isDone = false)
+            val newAllItems =
+                if (current.allItems.none { it.id == todoId }) current.allItems + restoredTodo
+                else current.allItems
+            val todayEpochDay = todayEpochDay()
+            val shouldAppearToday = (restoredTodo.scheduledDay ?: todayEpochDay) == todayEpochDay
+            val newTodayItems =
+                if (shouldAppearToday && current.todayItems.none { it.id == todoId }) {
+                    current.todayItems + restoredTodo
+                } else {
+                    current.todayItems
+                }
 
             current.copy(
-                hiddenIds = newHidden,
-                totalAllItems = newTotalAll,
-                totalItems = applyFilters(
-                    all = newTotalAll,
-                    hiddenIds = newHidden,
+                hiddenItemIds = newHidden,
+                todayItems = newTodayItems,
+                allItems = newAllItems,
+                filteredItems = filterItems(
+                    all = newAllItems,
+                    hiddenItemIds = newHidden,
                     query = current.query,
                     filterType = current.filterType,
-                    sort = current.sort,
-                    doneOnly = current.doneOnly
+                    sortOrder = current.sortOrder,
+                    showDoneOnly = current.showDoneOnly
                 )
             )
         }
 
-        if (removedStack.isNotEmpty()) {
-            emitSnackbarForTop()
-            scheduleTopConfirmation()
+        if (removedTodosStack.isNotEmpty()) {
+            emitUndoRemovedTodo()
+            scheduleRemovalConfirmation()
         }
     }
 
@@ -387,7 +391,7 @@ class HomeViewModel @Inject constructor(
         _state.update { current ->
             current.copy(
                 query = value,
-                totalItems = applyFilters(current.totalAllItems, current.hiddenIds, value, current.filterType, current.sort, current.doneOnly)
+                filteredItems = filterItems(current.allItems, current.hiddenItemIds, value, current.filterType, current.sortOrder, current.showDoneOnly)
             )
         }
     }
@@ -414,36 +418,36 @@ class HomeViewModel @Inject constructor(
             val newToday =
                 current.todayItems.map { if (it.id == id) it.copy(current = nextValue) else it }
 
-            val newTotalAll =
-                current.totalAllItems.map { if (it.id == id) it.copy(current = nextValue) else it }
+            val newAllItems =
+                current.allItems.map { if (it.id == id) it.copy(current = nextValue) else it }
 
             current.copy(
                 todayItems = newToday,
-                totalAllItems = newTotalAll,
-                totalItems = applyFilters(
-                    all = newTotalAll,
-                    hiddenIds = current.hiddenIds,
+                allItems = newAllItems,
+                filteredItems = filterItems(
+                    all = newAllItems,
+                    hiddenItemIds = current.hiddenItemIds,
                     query = current.query,
                     filterType = current.filterType,
-                    sort = current.sort,
-                    doneOnly = current.doneOnly
+                    sortOrder = current.sortOrder,
+                    showDoneOnly = current.showDoneOnly
                 )
             )
         }
     }
 
-    private fun applyFilters(
+    private fun filterItems(
         all: List<TodayItemUiModel>,
-        hiddenIds: Set<String>,
+        hiddenItemIds: Set<String>,
         query: String,
         filterType: TaskFilterType,
-        sort: TaskSort,
-        doneOnly: Boolean
+        sortOrder: TaskSort,
+        showDoneOnly: Boolean
     ): List<TodayItemUiModel> {
-        var seq = all.asSequence().filterNot { it.id in hiddenIds }
+        var seq = all.asSequence().filterNot { it.id in hiddenItemIds }
 
         seq =
-            if (doneOnly) {
+            if (showDoneOnly) {
                 seq.filter { it.isDone }
             } else {
                 seq.filter { !it.isDone }
@@ -464,29 +468,29 @@ class HomeViewModel @Inject constructor(
 
         val list = seq.toList()
 
-        return when (sort) {
+        return when (sortOrder) {
             TaskSort.RECENT -> list
             TaskSort.ALPHA -> list.sortedBy { it.title.lowercase() }
         }
     }
 
-    fun applyFilters(type: TaskFilterType, sort: TaskSort) {
+    fun applyFilters(type: TaskFilterType, sortOrder: TaskSort) {
         _state.update { current ->
             current.copy(
                 filterType = type,
-                sort = sort,
-                totalItems = applyFilters(current.totalAllItems, current.hiddenIds, current.query, type, sort, current.doneOnly)
+                sortOrder = sortOrder,
+                filteredItems = filterItems(current.allItems, current.hiddenItemIds, current.query, type, sortOrder, current.showDoneOnly)
             )
         }
     }
 
-    fun applyFilters(type: TaskFilterType, sort: TaskSort, doneOnly: Boolean) {
+    fun applyFilters(type: TaskFilterType, sortOrder: TaskSort, showDoneOnly: Boolean) {
         _state.update { current ->
             current.copy(
                 filterType = type,
-                sort = sort,
-                doneOnly = doneOnly,
-                totalItems = applyFilters(current.totalAllItems, current.hiddenIds, current.query, type, sort, doneOnly)
+                sortOrder = sortOrder,
+                showDoneOnly = showDoneOnly,
+                filteredItems = filterItems(current.allItems, current.hiddenItemIds, current.query, type, sortOrder, showDoneOnly)
             )
         }
     }
@@ -530,9 +534,10 @@ class HomeViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        confirmTopJob?.cancel()
-        confirmTopJob = null
-        removedStack.clear()
+        confirmRemovalJob?.cancel()
+        confirmRemovalJob = null
+        removedTodosStack.clear()
         super.onCleared()
     }
 }
+

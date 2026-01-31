@@ -60,9 +60,7 @@ fun AddTodoComponent(
         }
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDateMillis)
 
-    // Request focus on open and show keyboard
     LaunchedEffect(Unit) {
-        // small delay to ensure dialog is on screen
         delay(100)
         focusRequester.requestFocus()
         keyboardController?.show()
