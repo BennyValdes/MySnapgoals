@@ -23,6 +23,7 @@ import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 @Composable
 fun SnapGoalsTopBar(
     scrollBehavior: TopAppBarScrollBehavior,
+    avatarResId: Int = R.drawable.maleavatar,
     onProfileClick: () -> Unit = {},
     onMenuClick: () -> Unit = {}
 ) {
@@ -41,7 +42,7 @@ fun SnapGoalsTopBar(
         navigationIcon = {
             IconButton(onClick = onProfileClick) {
                 Icon(
-                    painter = painterResource(R.drawable.maleavatar),
+                    painter = painterResource(avatarResId),
                     contentDescription = "Profile Icon",
                     tint = Color.Unspecified
                 )

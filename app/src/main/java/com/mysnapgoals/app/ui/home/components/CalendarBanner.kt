@@ -1,6 +1,7 @@
 package com.mysnapgoals.app.ui.home.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mysnapgoals.app.ui.components.Button3D
 import com.mysnapgoals.app.ui.components.Panel3D
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
@@ -22,8 +24,8 @@ fun CalendarBanner(
     timeText: String,
     dayOfWeekText: String,
     dateText: String,
-    modifier: Modifier = Modifier
-
+    modifier: Modifier = Modifier,
+    onPomodoroClick: () -> Unit = {}
 ) {
     Panel3D(
         modifier = modifier
@@ -38,31 +40,53 @@ fun CalendarBanner(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = timeText,
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Clip
-            )
-
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = dayOfWeekText,
-                    style = MaterialTheme.typography.titleMedium,
+                    text = timeText,
+                    style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = dateText,
-                    style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Clip
                 )
+            }
+
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Button3D(
+                    text = "Pomodoro",
+                    onClick = onPomodoroClick,
+                    height = 38.dp,
+                    depth = 3.dp
+                )
+            }
+
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = dateText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Clip
+                    )
+                    Text(
+                        text = dayOfWeekText,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }

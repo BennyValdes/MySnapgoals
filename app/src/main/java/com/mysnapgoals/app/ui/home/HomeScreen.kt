@@ -25,10 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mysnapgoals.app.domain.model.GoalPeriodicity
+import com.mysnapgoals.app.settings.ProfileAvatar
+import com.mysnapgoals.app.settings.PomodoroSettings
+import com.mysnapgoals.app.settings.SettingsRepository
 import com.mysnapgoals.app.ui.home.components.CalendarBanner
 import com.mysnapgoals.app.ui.home.components.CalendarBannerState
 import com.mysnapgoals.app.ui.home.components.CalendarBannerViewModel
@@ -41,9 +45,11 @@ import com.mysnapgoals.app.ui.home.state.HomeEvent
 import com.mysnapgoals.app.ui.home.state.HomeState
 import com.mysnapgoals.app.ui.home.state.TaskFilterType
 import com.mysnapgoals.app.ui.home.state.TaskSort
+import com.mysnapgoals.app.ui.settings.SettingsScreen
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.mysnapgoals.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +60,10 @@ fun HomeScreen() {
     val statsViewModel: HomeStatsViewModel = hiltViewModel()
     val statsState by statsViewModel.state.collectAsState()
 
+    val context = LocalContext.current
+    val settingsRepository = remember { SettingsRepository(context) }
+    val settings by settingsRepository.settingsFlow.collectAsState(initial = PomodoroSettings())
+
     val calendarViewModel: CalendarBannerViewModel = hiltViewModel()
     val calendarState by calendarViewModel.state.collectAsState()
 
@@ -62,11 +72,19 @@ fun HomeScreen() {
 
     var showAddTodo by rememberSaveable { mutableStateOf(false) }
     var showAddGoal by rememberSaveable { mutableStateOf(false) }
+    var showPomodoro by rememberSaveable { mutableStateOf(false) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
     var editingItemId by rememberSaveable { mutableStateOf<String?>(null) }
 
     var showFilterSheet by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    val avatarResId =
+        when (settings.profileAvatar) {
+            ProfileAvatar.MALE -> R.drawable.maleavatar
+            ProfileAvatar.FEMALE -> R.drawable.femaleavatar
+        }
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -133,16 +151,23 @@ fun HomeScreen() {
         state = state,
         statsState = statsState,
         calendarState = calendarState,
+        avatarResId = avatarResId,
         snackbarHostState = snackbarHostState,
         scrollBehavior = scrollBehavior,
         showAddTodo = showAddTodo,
         showAddGoal = showAddGoal,
+        showPomodoro = showPomodoro,
+        showSettings = showSettings,
         showFilterSheet = showFilterSheet,
         editingItemId = editingItemId,
         onShowAddTodo = { showAddTodo = true },
         onShowAddGoal = { showAddGoal = true },
+        onShowPomodoro = { showPomodoro = true },
+        onShowSettings = { showSettings = true },
         onDismissAddTodo = { showAddTodo = false },
         onDismissAddGoal = { showAddGoal = false },
+        onDismissPomodoro = { showPomodoro = false },
+        onDismissSettings = { showSettings = false },
         onDismissFilterSheet = { showFilterSheet = false },
         onAddTodo = viewModel::addTodo,
         onAddGoal = viewModel::addGoal,
@@ -171,16 +196,23 @@ fun HomeContent(
     state: HomeState,
     statsState: HomeStatsState,
     calendarState: CalendarBannerState,
+    avatarResId: Int,
     snackbarHostState: SnackbarHostState,
     scrollBehavior: TopAppBarScrollBehavior,
     showAddTodo: Boolean,
     showAddGoal: Boolean,
+    showPomodoro: Boolean,
+    showSettings: Boolean,
     showFilterSheet: Boolean,
     editingItemId: String?,
     onShowAddTodo: () -> Unit,
     onShowAddGoal: () -> Unit,
+    onShowPomodoro: () -> Unit,
+    onShowSettings: () -> Unit,
     onDismissAddTodo: () -> Unit,
     onDismissAddGoal: () -> Unit,
+    onDismissPomodoro: () -> Unit,
+    onDismissSettings: () -> Unit,
     onDismissFilterSheet: () -> Unit,
     onAddTodo: (String, Long) -> Unit,
     onAddGoal: (String, GoalPeriodicity, Long) -> Unit,
@@ -197,6 +229,16 @@ fun HomeContent(
     onEditItem: (String) -> Unit,
     onShowFilters: () -> Unit
 ) {
+    if (showSettings) {
+        SettingsScreen(onClose = onDismissSettings)
+        return
+    }
+
+    if (showPomodoro) {
+        PomodoroScreen(onClose = onDismissPomodoro)
+        return
+    }
+
     if (showAddTodo) {
         AddTodoComponent(
             onDismiss = onDismissAddTodo,
@@ -258,7 +300,7 @@ fun HomeContent(
         modifier = Modifier
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = { SnapGoalsTopBar(scrollBehavior) },
+        topBar = { SnapGoalsTopBar(scrollBehavior, avatarResId = avatarResId, onMenuClick = onShowSettings) },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         LazyColumn(
@@ -274,7 +316,8 @@ fun HomeContent(
                     timeText = calendarState.timeText,
                     dayOfWeekText = calendarState.dayOfWeekText,
                     dateText = calendarState.dateText,
-                    modifier = Modifier.padding(top = 6.dp)
+                    modifier = Modifier.padding(top = 6.dp),
+                    onPomodoroClick = onShowPomodoro
                 )
             }
             item {
@@ -410,16 +453,23 @@ fun HomeContentPreview() {
                 dayOfWeekText = "Lunes",
                 dateText = "2026/01/31"
             ),
+            avatarResId = R.drawable.maleavatar,
             snackbarHostState = SnackbarHostState(),
             scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState()),
             showAddTodo = false,
             showAddGoal = false,
+            showPomodoro = false,
+            showSettings = false,
             showFilterSheet = false,
             editingItemId = null,
             onShowAddTodo = {},
             onShowAddGoal = {},
+            onShowPomodoro = {},
+            onShowSettings = {},
             onDismissAddTodo = {},
             onDismissAddGoal = {},
+            onDismissPomodoro = {},
+            onDismissSettings = {},
             onDismissFilterSheet = {},
             onAddTodo = { _, _ -> },
             onAddGoal = { _, _, _ -> },
