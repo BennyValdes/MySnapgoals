@@ -80,7 +80,7 @@
     <string name="pomodoro_breaks_title">Descansos</string>
     <string name="pomodoro_short_break">Tiempo descanso corto %1$d min</string>
     <string name="pomodoro_long_break">Tiempo descanso largo %1$d min</string>
-    <string name="pomodoro_long_break_every">Descanso cada %1$d ciclos</string>
+    <string name="pomodoro_long_break_every">Descanso Largo cada %1$d ciclos</string>
     <string name="pomodoro_minutes">%1$d min</string>
     <string name="pomodoro_start">Iniciar</string>
     <string name="pomodoro_stop">Detener</string>

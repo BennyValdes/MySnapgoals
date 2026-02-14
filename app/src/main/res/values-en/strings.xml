@@ -80,7 +80,7 @@
     <string name="pomodoro_breaks_title">Breaks</string>
     <string name="pomodoro_short_break">Short break time %1$d min</string>
     <string name="pomodoro_long_break">Long break time %1$d min</string>
-    <string name="pomodoro_long_break_every">Break every %1$d cycles</string>
+    <string name="pomodoro_long_break_every">Long Break every %1$d cycles</string>
     <string name="pomodoro_minutes">%1$d min</string>
     <string name="pomodoro_start">Start</string>
     <string name="pomodoro_stop">Stop</string>
