@@ -204,6 +204,8 @@ private fun BarWithTooltip(
         overdueCount,
         overdue
     )
+    val tooltipLines = tooltipText.lines().filter { it.isNotBlank() }
+    val tooltipColors = listOf(completedColor, pendingColor, overdueColor)
 
     LaunchedEffect(showTooltip) {
         if (showTooltip) {
@@ -227,21 +229,18 @@ private fun BarWithTooltip(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(barHeight * (completed / 100f))
-                .clip(RoundedCornerShape(8.dp))
                 .background(completedColor)
         )
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(barHeight * (pending / 100f))
-                .clip(RoundedCornerShape(8.dp))
                 .background(pendingColor)
         )
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(barHeight * (overdue / 100f))
-                .clip(RoundedCornerShape(8.dp))
                 .background(overdueColor)
         )
     }
@@ -253,11 +252,29 @@ private fun BarWithTooltip(
                 shape = RoundedCornerShape(8.dp),
                 shadowElevation = 4.dp
             ) {
-                Text(
-                    text = tooltipText,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Column(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    tooltipLines.forEachIndexed { index, line ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Spacer(
+                                modifier = Modifier
+                                    .width(8.dp)
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(tooltipColors.getOrElse(index) { MaterialTheme.colorScheme.onSurface })
+                            )
+                            Text(
+                                text = line,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
             }
         }
     }
