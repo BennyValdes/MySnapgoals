@@ -25,14 +25,18 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mysnapgoals.app.R
 import com.mysnapgoals.app.ui.components.Button3D
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,7 +54,9 @@ fun AddTodoComponent(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val zoneId = remember { ZoneId.systemDefault() }
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("yyyy/MM/dd") }
+    val dateFormatter = remember {
+        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
+    }
     val initialDateMillis =
         remember {
             LocalDate.now()
@@ -79,10 +85,10 @@ fun AddTodoComponent(
                         selectedDueDateMillis = datePickerState.selectedDateMillis
                         showDatePicker = false
                     }
-                ) { Text("Aceptar") }
+                ) { Text(stringResource(R.string.common_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -94,7 +100,7 @@ fun AddTodoComponent(
             focusManager.clearFocus()
             onDismiss()
         },
-        title = { Text("Agregar ToDo") },
+        title = { Text(stringResource(R.string.add_todo_title)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -108,8 +114,8 @@ fun AddTodoComponent(
                         .focusRequester(focusRequester),
                     singleLine = true,
                     isError = hasError,
-                    label = { Text("Titulo") },
-                    supportingText = { if (hasError) Text("El titulo no puede estar vacio") }
+                    label = { Text(stringResource(R.string.common_title)) },
+                    supportingText = { if (hasError) Text(stringResource(R.string.title_error)) }
                 )
 
                 Row(
@@ -121,15 +127,15 @@ fun AddTodoComponent(
                             val date =
                                 Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate()
                             date.format(dateFormatter)
-                        } ?: "Hoy"
+                        } ?: stringResource(R.string.home_due_date_today)
 
-                    Text(text = "Due date: $dateText")
+                    Text(text = stringResource(R.string.home_due_date, dateText))
                     Spacer(modifier = Modifier.weight(1f))
                     Button3D(
                         onClick = { showDatePicker = true },
                         height = 36.dp,
                         depth = 3.dp
-                    ) { Text("Calendario") }
+                    ) { Text(stringResource(R.string.common_calendar)) }
                 }
             }
         },
@@ -148,7 +154,7 @@ fun AddTodoComponent(
                     modifier = Modifier.weight(1f),
                     height = 44.dp,
                     depth = 4.dp
-                ) { Text("Cancelar") }
+                ) { Text(stringResource(R.string.common_cancel)) }
 
                 Button3D(
                     onClick = {
@@ -167,7 +173,7 @@ fun AddTodoComponent(
                     modifier = Modifier.weight(1f),
                     height = 44.dp,
                     depth = 4.dp
-                ) { Text("Guardar") }
+                ) { Text(stringResource(R.string.common_save)) }
             }
         }
     )

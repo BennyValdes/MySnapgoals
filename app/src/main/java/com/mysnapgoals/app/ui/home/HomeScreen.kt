@@ -98,15 +98,15 @@ fun HomeScreen() {
                     }
 
                     val label = if (event.todo.type == TodayItemType.GOAL) {
-                        "Objetivo removido de Hoy"
+                        context.getString(R.string.home_snackbar_goal_removed)
                     } else {
-                        "ToDo removido de Hoy"
+                        context.getString(R.string.home_snackbar_todo_removed)
                     }
 
                     val result =
                         snackbarHostState.showSnackbar(
                             message = label,
-                            actionLabel = "Deshacer",
+                            actionLabel = context.getString(R.string.home_action_undo),
                             duration = SnackbarDuration.Indefinite
                         )
 
@@ -125,15 +125,15 @@ fun HomeScreen() {
                     }
 
                     val label = if (event.todo.type == TodayItemType.GOAL) {
-                        "Objetivo reabierto"
+                        context.getString(R.string.home_snackbar_goal_reopened)
                     } else {
-                        "ToDo reabierto"
+                        context.getString(R.string.home_snackbar_todo_reopened)
                     }
 
                     val result =
                         snackbarHostState.showSnackbar(
                             message = label,
-                            actionLabel = "Deshacer",
+                            actionLabel = context.getString(R.string.home_action_undo),
                             duration = SnackbarDuration.Indefinite
                         )
 

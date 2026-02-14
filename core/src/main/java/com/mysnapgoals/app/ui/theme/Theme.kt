@@ -36,7 +36,8 @@ private val DarkColorScheme = darkColorScheme(
     onSurfaceVariant = Beige,
 
     outline = Beige.copy(alpha = 0.8f),
-    outlineVariant = Beige.copy(alpha = 0.55f)
+    outlineVariant = Beige.copy(alpha = 0.55f),
+    error = PinkDust
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -64,7 +65,8 @@ private val LightColorScheme = lightColorScheme(
     onSurfaceVariant = Graphite,
 
     outline = Graphite,
-    outlineVariant = Graphite.copy(alpha = 0.45f)
+    outlineVariant = Graphite.copy(alpha = 0.45f),
+    error = PinkPlum
 )
 
 private val PinkLightColorScheme = lightColorScheme(
@@ -92,7 +94,8 @@ private val PinkLightColorScheme = lightColorScheme(
     onSurfaceVariant = PinkPlum,
 
     outline = PinkPlum,
-    outlineVariant = PinkPlum.copy(alpha = 0.45f)
+    outlineVariant = PinkPlum.copy(alpha = 0.45f),
+    error = PinkPlum
 )
 
 private val PinkDarkColorScheme = darkColorScheme(
@@ -120,7 +123,8 @@ private val PinkDarkColorScheme = darkColorScheme(
     onSurfaceVariant = PinkCream,
 
     outline = PinkCream.copy(alpha = 0.8f),
-    outlineVariant = PinkCream.copy(alpha = 0.55f)
+    outlineVariant = PinkCream.copy(alpha = 0.55f),
+    error = PinkPlum
 )
 
 private val CoffeeLightColorScheme = lightColorScheme(
@@ -148,7 +152,8 @@ private val CoffeeLightColorScheme = lightColorScheme(
     onSurfaceVariant = CoffeeMocha,
 
     outline = CoffeeMocha,
-    outlineVariant = CoffeeMocha.copy(alpha = 0.45f)
+    outlineVariant = CoffeeMocha.copy(alpha = 0.45f),
+    error = PinkDust
 )
 
 private val CoffeeDarkColorScheme = darkColorScheme(
@@ -176,7 +181,8 @@ private val CoffeeDarkColorScheme = darkColorScheme(
     onSurfaceVariant = CoffeeCream,
 
     outline = CoffeeCream.copy(alpha = 0.7f),
-    outlineVariant = CoffeeCream.copy(alpha = 0.45f)
+    outlineVariant = CoffeeCream.copy(alpha = 0.45f),
+    error = PinkDust
 )
 
 @Composable

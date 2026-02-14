@@ -30,6 +30,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.res.stringResource
+import com.mysnapgoals.app.R
 import com.mysnapgoals.app.ui.components.Panel3D
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 import kotlinx.coroutines.delay
@@ -81,7 +83,7 @@ fun PercentageLine(
                 completedCount = dayCompletedCount,
                 pendingCount = dayPendingCount,
                 overdueCount = dayOverdueCount,
-                label = "Dia"
+                label = stringResource(R.string.percentage_day)
             )
 
             BarCell(
@@ -91,7 +93,7 @@ fun PercentageLine(
                 completedCount = weekCompletedCount,
                 pendingCount = weekPendingCount,
                 overdueCount = weekOverdueCount,
-                label = "Sem"
+                label = stringResource(R.string.percentage_week)
             )
 
             BarCell(
@@ -101,7 +103,7 @@ fun PercentageLine(
                 completedCount = monthCompletedCount,
                 pendingCount = monthPendingCount,
                 overdueCount = monthOverdueCount,
-                label = "Mes"
+                label = stringResource(R.string.percentage_month)
             )
 
             BarCell(
@@ -111,7 +113,7 @@ fun PercentageLine(
                 completedCount = yearCompletedCount,
                 pendingCount = yearPendingCount,
                 overdueCount = yearOverdueCount,
-                label = "Ano"
+                label = stringResource(R.string.percentage_year)
             )
         }
     }
@@ -127,9 +129,9 @@ private fun BarCell(
     overdueCount: Int,
     label: String
 ) {
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-    val completedColor = MaterialTheme.colorScheme.primary
-    val pendingColor = androidx.compose.ui.graphics.Color(0xFFF2A23A)
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f)
+    val completedColor = MaterialTheme.colorScheme.secondary
+    val pendingColor = MaterialTheme.colorScheme.primary
     val overdueColor = MaterialTheme.colorScheme.error
     val textColor = MaterialTheme.colorScheme.onSurface
     val barHeight = 64.dp
@@ -193,7 +195,15 @@ private fun BarWithTooltip(
     overdueColor: androidx.compose.ui.graphics.Color
 ) {
     var showTooltip by remember { mutableStateOf(false) }
-    val tooltipText = "Completados: $completedCount ($completed%)\nPendientes: $pendingCount ($pending%)\nNo completados: $overdueCount ($overdue%)"
+    val tooltipText = stringResource(
+        R.string.percentage_tooltip,
+        completedCount,
+        completed,
+        pendingCount,
+        pending,
+        overdueCount,
+        overdue
+    )
 
     LaunchedEffect(showTooltip) {
         if (showTooltip) {

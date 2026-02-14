@@ -11,7 +11,6 @@ import com.mysnapgoals.app.domain.usecase.AddTodoUseCase
 import com.mysnapgoals.app.domain.usecase.InsertGoalProgressEventUseCase
 import com.mysnapgoals.app.domain.usecase.ObserveTasksUseCase
 import com.mysnapgoals.app.domain.usecase.SetDoneUseCase
-import com.mysnapgoals.app.domain.usecase.SumGoalProgressForGoalUseCase
 import com.mysnapgoals.app.domain.usecase.UpdateTaskUseCase
 import com.mysnapgoals.app.domain.usecase.ObserveGoalProgressEventsUseCase
 import com.mysnapgoals.app.ui.home.components.TodayItemType
@@ -42,7 +41,6 @@ class HomeViewModel @Inject constructor(
     private val addGoalUseCase: AddGoalUseCase,
     private val setDoneUseCase: SetDoneUseCase,
     private val insertGoalProgressEventUseCase: InsertGoalProgressEventUseCase,
-    private val sumGoalProgressForGoalUseCase: SumGoalProgressForGoalUseCase,
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val observeGoalProgressEventsUseCase: ObserveGoalProgressEventsUseCase
 ) : ViewModel() {
@@ -76,19 +74,25 @@ class HomeViewModel @Inject constructor(
                 observeTasks(),
                 observeGoalProgressEventsUseCase(),
                 todayEpochDayFlow
-            ) { tasks, _, _ -> tasks }
-                .collect { entities ->
+            ) { tasks, events, _ -> tasks to events }
+                .collect { (entities, events) ->
                 val today = todayEpochDay()
                 val goalProgressToday = mutableMapOf<String, Int>()
                 val goalProgressCurrent = mutableMapOf<String, Int>()
                 val goalTargetCurrent = mutableMapOf<String, Int>()
+                val goalDeltaByGoalAndDay = events
+                    .groupBy { it.goalId }
+                    .mapValues { (_, list) ->
+                        list.groupBy { it.epochDay }
+                            .mapValues { (_, dayEvents) -> dayEvents.sumOf { it.delta } }
+                    }
                 tasksById = entities.associateBy { it.id }
 
                 for (goal in entities.filter { it.type == TaskType.GOAL }) {
                     val periodicity = goal.periodicity ?: defaultGoalPeriodicity
                     val (periodStart, periodEnd) = periodRangeForToday(periodicity, today)
-                    val progressCurrent = sumGoalProgressForGoalUseCase(goal.id, periodStart, periodEnd)
-                    val progressToday = sumGoalProgressForGoalUseCase(goal.id, today, today)
+                    val progressCurrent = sumGoalDelta(goalDeltaByGoalAndDay, goal.id, periodStart, periodEnd)
+                    val progressToday = sumGoalDelta(goalDeltaByGoalAndDay, goal.id, today, today)
                     val target = periodTarget(periodicity, today)
                     goalProgressCurrent[goal.id] = progressCurrent
                     goalProgressToday[goal.id] = progressToday
@@ -99,7 +103,14 @@ class HomeViewModel @Inject constructor(
                     val todayItems =
                         entities.asSequence()
                             .filter { !it.isDone }
-                            .filter { (it.scheduledDay ?: today) == today }
+                            .filter { task ->
+                                if (task.type == TaskType.GOAL) {
+                                    val dueDay = task.dueDay ?: today
+                                    dueDay >= today
+                                } else {
+                                    (task.scheduledDay ?: today) == today
+                                }
+                            }
                             .map { task ->
                                 val base = task.toUiModel()
                                 if (task.type == TaskType.GOAL) {
@@ -113,9 +124,7 @@ class HomeViewModel @Inject constructor(
                             .filterNot { item ->
                                 if (item.type != TodayItemType.GOAL) return@filterNot false
                                 val progressToday = goalProgressToday[item.id] ?: 0
-                                val target = goalTargetCurrent[item.id] ?: 0
-                                val progressCurrent = goalProgressCurrent[item.id] ?: 0
-                                progressToday > 0 || (target > 0 && progressCurrent >= target)
+                                progressToday > 0
                             }
                             .filterNot { it.id in current.hiddenItemIds }
                             .toList()
@@ -531,6 +540,21 @@ class HomeViewModel @Inject constructor(
     private fun periodTarget(periodicity: GoalPeriodicity, todayEpochDay: Long): Int {
         val (start, end) = periodRangeForToday(periodicity, todayEpochDay)
         return (end - start + 1).toInt().coerceAtLeast(1)
+    }
+
+    private fun sumGoalDelta(
+        goalDeltaByGoalAndDay: Map<String, Map<Long, Int>>,
+        goalId: String,
+        startDay: Long,
+        endDay: Long
+    ): Int {
+        if (startDay > endDay) return 0
+        val dayMap = goalDeltaByGoalAndDay[goalId] ?: return 0
+        var sum = 0
+        for (day in startDay..endDay) {
+            sum += dayMap[day] ?: 0
+        }
+        return sum
     }
 
     override fun onCleared() {

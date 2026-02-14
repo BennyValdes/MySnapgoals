@@ -26,6 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.mysnapgoals.app.R
 import com.mysnapgoals.app.ui.components.Button3D
 import com.mysnapgoals.app.ui.home.state.TaskFilterType
 import com.mysnapgoals.app.ui.home.state.TaskSort
@@ -65,25 +67,25 @@ fun FilterSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
         ) {
-            Text("Filtros", style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.filter_title), style = MaterialTheme.typography.titleLarge)
 
             Spacer(Modifier.height(12.dp))
-            Text("Tipo", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.filter_type_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(6.dp))
 
-            RadioRow("Todos", filterType == TaskFilterType.ALL) { filterType = TaskFilterType.ALL }
-            RadioRow("ToDos", filterType == TaskFilterType.TODO) { filterType = TaskFilterType.TODO }
-            RadioRow("Objetivos", filterType == TaskFilterType.GOAL) { filterType = TaskFilterType.GOAL }
+            RadioRow(stringResource(R.string.filter_type_all), filterType == TaskFilterType.ALL) { filterType = TaskFilterType.ALL }
+            RadioRow(stringResource(R.string.filter_type_todos), filterType == TaskFilterType.TODO) { filterType = TaskFilterType.TODO }
+            RadioRow(stringResource(R.string.filter_type_goals), filterType == TaskFilterType.GOAL) { filterType = TaskFilterType.GOAL }
 
             Spacer(Modifier.height(12.dp))
             HorizontalDivider()
             Spacer(Modifier.height(12.dp))
 
-            Text("Orden", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.filter_sort_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(6.dp))
 
-            RadioRow("Recientes", sort == TaskSort.RECENT) { sort = TaskSort.RECENT }
-            RadioRow("A-Z", sort == TaskSort.ALPHA) { sort = TaskSort.ALPHA }
+            RadioRow(stringResource(R.string.filter_sort_recent), sort == TaskSort.RECENT) { sort = TaskSort.RECENT }
+            RadioRow(stringResource(R.string.filter_sort_alpha), sort == TaskSort.ALPHA) { sort = TaskSort.ALPHA }
 
             Spacer(Modifier.height(12.dp))
             HorizontalDivider()
@@ -96,7 +98,7 @@ fun FilterSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Solo completados")
+                Text(stringResource(R.string.filter_done_only))
                 Switch(checked = doneOnly, onCheckedChange = { doneOnly = it })
             }
 
@@ -113,7 +115,7 @@ fun FilterSheet(
                     modifier = Modifier.weight(1f),
                     height = 44.dp,
                     depth = 4.dp
-                ) { Text("Limpiar") }
+                ) { Text(stringResource(R.string.filter_clear)) }
 
                 Button3D(
                     onClick = {
@@ -123,7 +125,7 @@ fun FilterSheet(
                     modifier = Modifier.weight(1f),
                     height = 44.dp,
                     depth = 4.dp
-                ) { Text("Aplicar") }
+                ) { Text(stringResource(R.string.filter_apply)) }
             }
 
             Spacer(Modifier.height(24.dp))

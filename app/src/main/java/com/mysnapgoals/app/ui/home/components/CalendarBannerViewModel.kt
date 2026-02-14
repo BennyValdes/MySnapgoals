@@ -8,6 +8,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.delay
@@ -30,14 +31,6 @@ class CalendarBannerViewModel @Inject constructor() : ViewModel() {
     val state: StateFlow<CalendarBannerState> = _state
 
     private val zoneId: ZoneId = ZoneId.systemDefault()
-    private val locale: Locale = Locale.Builder()
-        .setLanguage("es")
-        .setRegion("US")
-        .build()
-
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", locale)
-    private val dayFormatter = DateTimeFormatter.ofPattern("EEEE", locale)
-    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", locale)
 
     init {
         viewModelScope.launch {
@@ -52,6 +45,10 @@ class CalendarBannerViewModel @Inject constructor() : ViewModel() {
 
     private fun tick() {
         val now = LocalDateTime.now(zoneId)
+        val locale = Locale.getDefault()
+        val timeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale)
+        val dayFormatter = DateTimeFormatter.ofPattern("EEEE", locale)
+        val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
 
         val time = now.format(timeFormatter)
         val day = now.format(dayFormatter).replaceFirstChar { it.uppercase(locale) }

@@ -1,0 +1,110 @@
+<resources>
+    <string name="app_name">mySnapgoals</string>
+    <string name="common_ok">OK</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_save">Save</string>
+    <string name="common_continue">Continue</string>
+    <string name="common_back">Back</string>
+    <string name="common_calendar">Calendar</string>
+    <string name="common_title">Title</string>
+    <string name="common_no_items">No items to show.</string>
+    <string name="common_selected">Selected</string>
+
+    <string name="home_today_title">Today</string>
+    <string name="home_today_empty">Nothing pending for today.</string>
+    <string name="home_total_title">Todo</string>
+    <string name="home_due_date">Due date: %1$s</string>
+    <string name="home_due_date_today">Today</string>
+    <string name="home_due_date_none">No date</string>
+    <string name="home_snackbar_goal_removed">Goal removed from Today</string>
+    <string name="home_snackbar_todo_removed">Todo removed from Today</string>
+    <string name="home_snackbar_goal_reopened">Goal reopened</string>
+    <string name="home_snackbar_todo_reopened">Todo reopened</string>
+    <string name="home_action_undo">Undo</string>
+
+    <string name="add_goal_title">Add Goal</string>
+    <string name="add_todo_title">Add Todo</string>
+    <string name="edit_goal_title">Edit Goal</string>
+    <string name="edit_todo_title">Edit Todo</string>
+    <string name="title_error">Title cannot be empty</string>
+    <string name="periodicity_title">Periodicity</string>
+    <string name="periodicity_daily">Daily</string>
+    <string name="periodicity_weekly">Weekly</string>
+    <string name="periodicity_monthly">Monthly</string>
+    <string name="periodicity_semester">Semester</string>
+    <string name="periodicity_annual">Annual</string>
+    <string name="date_confirm_title">Confirm due date</string>
+    <string name="date_confirm_body">You did not select a due date. It will be set automatically based on periodicity. Continue?</string>
+    <string name="add_goal_button">Add goal</string>
+    <string name="add_todo_button">Add todo</string>
+
+    <string name="filter_title">Filters</string>
+    <string name="filter_type_title">Type</string>
+    <string name="filter_type_all">All</string>
+    <string name="filter_type_todos">Todos</string>
+    <string name="filter_type_goals">Goals</string>
+    <string name="filter_sort_title">Sort</string>
+    <string name="filter_sort_recent">Recent</string>
+    <string name="filter_sort_alpha">A-Z</string>
+    <string name="filter_done_only">Completed only</string>
+    <string name="filter_clear">Clear</string>
+    <string name="filter_apply">Apply</string>
+    <string name="filter_search_label">Search</string>
+    <string name="filter_content_desc">Filters</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_pomodoro">Pomodoro</string>
+    <string name="settings_profile">Profile</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_behavior">Behavior</string>
+    <string name="settings_auto_start_breaks">Auto-start break</string>
+    <string name="settings_auto_start_work">Auto-start next pomodoro</string>
+    <string name="settings_pause_on_exit">Pause on exit</string>
+    <string name="settings_sound_vibration">Sound / vibration</string>
+    <string name="settings_alarm">Alarm at end</string>
+    <string name="settings_volume">Volume %1$d%%</string>
+    <string name="settings_vibration">Vibration</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_keep_notification">Keep timer in notification</string>
+    <string name="settings_notification_hint">Includes pause/resume action from notification.</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_pink">Pink</string>
+    <string name="settings_theme_coffee">Coffee</string>
+
+    <string name="pomodoro_title">Pomodoro</string>
+    <string name="pomodoro_phase_work">Work</string>
+    <string name="pomodoro_phase_short_break">Short break</string>
+    <string name="pomodoro_phase_long_break">Long break</string>
+    <string name="pomodoro_work_time">Work time %1$d min</string>
+    <string name="pomodoro_breaks_title">Breaks</string>
+    <string name="pomodoro_short_break">Short break time %1$d min</string>
+    <string name="pomodoro_long_break">Long break time %1$d min</string>
+    <string name="pomodoro_long_break_every">Break every %1$d cycles</string>
+    <string name="pomodoro_minutes">%1$d min</string>
+    <string name="pomodoro_start">Start</string>
+    <string name="pomodoro_stop">Stop</string>
+    <string name="pomodoro_reset">Reset</string>
+    <string name="pomodoro_action_pause">Pause</string>
+    <string name="pomodoro_action_resume">Resume</string>
+    <string name="pomodoro_notification_content">%1$s • %2$s</string>
+
+    <string name="calendar_pomodoro">Pomodoro</string>
+
+    <string name="percentage_day">Day</string>
+    <string name="percentage_week">Week</string>
+    <string name="percentage_month">Month</string>
+    <string name="percentage_year">Year</string>
+    <string name="percentage_tooltip">Completed: %1$d (%2$d%%)\nPending: %3$d (%4$d%%)\nNot completed: %5$d (%6$d%%)</string>
+
+    <string name="content_desc_back">Back</string>
+    <string name="content_desc_selected">Selected</string>
+    <string name="content_desc_menu">Menu</string>
+    <string name="content_desc_profile">Profile</string>
+    <string name="content_desc_add_goal">Add goal</string>
+    <string name="content_desc_add_todo">Add todo</string>
+    <string name="content_desc_completed">Completed</string>
+    <string name="content_desc_pending">Pending</string>
+    <string name="content_desc_decrement">Decrease</string>
+    <string name="content_desc_increment">Increase</string>
+</resources>

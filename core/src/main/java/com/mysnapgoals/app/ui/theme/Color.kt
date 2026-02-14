@@ -22,7 +22,7 @@ val PinkBlush = Color(0xFFF7E6EA)
 val PinkCream = Color(0xFFFBEFF2)
 val PinkDust = Color(0xFFE7B9C6)
 val PinkRose = Color(0xFFC9718E)
-val PinkPlum = Color(0xFF6A2E3E)
+val PinkPlum = Color(0xFFA10C46)
 val PinkNight = Color(0xFF2B141B)
 
 val CoffeeMilk = Color(0xFFF4ECE2)

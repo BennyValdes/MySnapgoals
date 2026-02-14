@@ -15,6 +15,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.res.stringResource
+import com.mysnapgoals.app.R
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,12 +35,12 @@ fun FilterLine(
         modifier = modifier
             .fillMaxWidth(),
         singleLine = true,
-        label = { Text("Buscar") },
+        label = { Text(stringResource(R.string.filter_search_label)) },
         trailingIcon = {
             IconButton(onClick = onTrailingActionClick) {
                 Icon(
                     imageVector = if (showDropdown) Icons.Filled.ArrowDropDown else Icons.AutoMirrored.Filled.List,
-                    contentDescription = "Filtros"
+                    contentDescription = stringResource(R.string.filter_content_desc)
                 )
             }
         }

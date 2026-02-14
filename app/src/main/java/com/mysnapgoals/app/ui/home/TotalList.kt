@@ -12,10 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.res.stringResource
+import com.mysnapgoals.app.R
 import com.mysnapgoals.app.ui.home.components.TodayItem
 import com.mysnapgoals.app.ui.home.components.TodayItemType
 import com.mysnapgoals.app.ui.home.components.TodayItemUiModel
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
+import java.time.LocalDate
 
 @Composable
 fun TotalList(
@@ -27,10 +30,15 @@ fun TotalList(
     onItemClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val today = LocalDate.now().toEpochDay()
     val ordered =
         items.sortedWith(
-            compareBy<TodayItemUiModel> { it.type != TodayItemType.TODO }
-                .thenBy { it.title.lowercase() }
+            compareBy<TodayItemUiModel> {
+                when (it.type) {
+                    TodayItemType.TODO -> it.scheduledDay ?: today
+                    TodayItemType.GOAL -> it.dueDay ?: today
+                }
+            }.thenBy { it.title.lowercase() }
         )
 
     Column(
@@ -44,7 +52,7 @@ fun TotalList(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Todo",
+                text = stringResource(R.string.home_total_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -58,7 +66,7 @@ fun TotalList(
 
         if (ordered.isEmpty()) {
             Text(
-                text = "No hay elementos para mostrar.",
+                text = stringResource(R.string.common_no_items),
                 style = MaterialTheme.typography.bodyMedium,
             )
         } else {

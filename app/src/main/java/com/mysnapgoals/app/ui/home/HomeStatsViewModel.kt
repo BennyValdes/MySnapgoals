@@ -2,15 +2,18 @@ package com.mysnapgoals.app.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mysnapgoals.app.domain.model.GoalPeriodicity
+import com.mysnapgoals.app.domain.model.GoalProgressEvent
 import com.mysnapgoals.app.domain.model.Task
 import com.mysnapgoals.app.domain.model.TaskType
 import com.mysnapgoals.app.domain.usecase.ObserveGoalProgressEventsUseCase
 import com.mysnapgoals.app.domain.usecase.ObserveTasksUseCase
-import com.mysnapgoals.app.domain.usecase.SumGoalProgressForGoalUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.YearMonth
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -49,7 +52,6 @@ data class HomeStatsState(
 @HiltViewModel
 class HomeStatsViewModel @Inject constructor(
     private val observeTasks: ObserveTasksUseCase,
-    private val sumGoalProgressForGoal: SumGoalProgressForGoalUseCase,
     private val observeGoalProgressEvents: ObserveGoalProgressEventsUseCase
 ) : ViewModel() {
 
@@ -63,18 +65,18 @@ class HomeStatsViewModel @Inject constructor(
                 observeTasks(),
                 observeGoalProgressEvents(),
                 dayTick
-            ) { tasks, _, _ -> tasks }
-                .collect { entities ->
+            ) { tasks, events, _ -> tasks to events }
+                .collect { (tasks, events) ->
                     val today = todayEpochDay()
 
                     val (weekStart, weekEndExclusive) = weekRange(today)
                     val (monthStart, monthEndExclusive) = monthRange(today)
                     val (yearStart, yearEndExclusive) = yearRange(today)
 
-                    val dayBreakdown = calculateBreakdown(entities, today to today, today)
-                    val weekBreakdown = calculateBreakdown(entities, weekStart to (weekEndExclusive - 1), today)
-                    val monthBreakdown = calculateBreakdown(entities, monthStart to (monthEndExclusive - 1), today)
-                    val yearBreakdown = calculateBreakdown(entities, yearStart to (yearEndExclusive - 1), today)
+                    val dayBreakdown = calculateBreakdown(tasks, events, today to today, today)
+                    val weekBreakdown = calculateBreakdown(tasks, events, weekStart to (weekEndExclusive - 1), today)
+                    val monthBreakdown = calculateBreakdown(tasks, events, monthStart to (monthEndExclusive - 1), today)
+                    val yearBreakdown = calculateBreakdown(tasks, events, yearStart to (yearEndExclusive - 1), today)
 
                     _state.update {
                         it.copy(
@@ -160,8 +162,9 @@ class HomeStatsViewModel @Inject constructor(
         val overduePct: Int
     )
 
-    private suspend fun calculateBreakdown(
+    private fun calculateBreakdown(
         tasks: List<Task>,
+        events: List<GoalProgressEvent>,
         range: Pair<Long, Long>,
         todayEpochDay: Long
     ): Breakdown {
@@ -172,34 +175,74 @@ class HomeStatsViewModel @Inject constructor(
         var pending = 0
         var overdue = 0
 
+        val goalDeltaByGoalAndDay = events
+            .groupBy { it.goalId }
+            .mapValues { (_, list) ->
+                list.groupBy { it.epochDay }
+                    .mapValues { (_, dayEvents) -> dayEvents.sumOf { it.delta } }
+            }
+
         val todos =
             tasks.filter { it.type == TaskType.TODO }
-                .filter { (it.scheduledDay ?: todayEpochDay) in startDay..endDay }
+                .filter { todo ->
+                    val dueDay = todo.scheduledDay ?: todayEpochDay
+                    rangesOverlap(startDay, endDay, dueDay, dueDay)
+                }
 
-        val goals =
-            tasks.filter { it.type == TaskType.GOAL }
-                .filter { (it.dueDay ?: todayEpochDay) in startDay..endDay }
+        val goals = tasks.filter { it.type == TaskType.GOAL }
 
         for (todo in todos) {
-            val doneDay = todo.doneAt?.let { epochDayFromMillis(it) }
-            val isCompleted = todo.isDone && doneDay != null && doneDay in startDay..endDay
+            val isCompleted = todo.isDone
             if (isCompleted) {
                 completed++
             } else {
                 val scheduled = todo.scheduledDay ?: todayEpochDay
-                if (scheduled < todayEpochDay) overdue++ else pending++
+                val isOverdue = scheduled < todayEpochDay
+                if (isOverdue) overdue++ else pending++
             }
         }
 
         for (goal in goals) {
-            val dueDay = goal.dueDay ?: todayEpochDay
-            val progressInRange = sumGoalProgressForGoal(goal.id, startDay, endDay)
-            val isCompleted = progressInRange > 0
-            if (isCompleted) {
-                completed++
-            } else if (dueDay in startDay..endDay) {
-                if (dueDay < todayEpochDay) overdue++ else pending++
+            val periodicity = goal.periodicity ?: GoalPeriodicity.MONTHLY
+            val dueDay = goal.dueDay ?: Long.MAX_VALUE
+            val createdDay = epochDayFromMillis(goal.createdAt)
+            val effectiveStart = maxOf(startDay, createdDay)
+            val effectiveEnd = minOf(endDay, dueDay)
+
+            if (effectiveStart > effectiveEnd) continue
+
+            val overdueEnd = minOf(effectiveEnd, todayEpochDay - 1)
+            val pendingStart = maxOf(effectiveStart, todayEpochDay)
+
+            val overdueExpected = if (effectiveStart <= overdueEnd) {
+                expectedOccurrences(periodicity, effectiveStart, overdueEnd)
+            } else {
+                0
             }
+            val pendingExpected = if (pendingStart <= effectiveEnd) {
+                expectedOccurrences(periodicity, pendingStart, effectiveEnd)
+            } else {
+                0
+            }
+
+            val overdueProgress = if (effectiveStart <= overdueEnd) {
+                sumGoalDelta(goalDeltaByGoalAndDay, goal.id, effectiveStart, overdueEnd)
+            } else {
+                0
+            }.coerceAtLeast(0)
+
+            val pendingProgress = if (pendingStart <= effectiveEnd) {
+                sumGoalDelta(goalDeltaByGoalAndDay, goal.id, pendingStart, effectiveEnd)
+            } else {
+                0
+            }.coerceAtLeast(0)
+
+            val completedOverdue = overdueProgress.coerceAtMost(overdueExpected)
+            val completedPending = pendingProgress.coerceAtMost(pendingExpected)
+
+            completed += (completedOverdue + completedPending)
+            overdue += (overdueExpected - completedOverdue).coerceAtLeast(0)
+            pending += (pendingExpected - completedPending).coerceAtLeast(0)
         }
 
         val total = completed + pending + overdue
@@ -218,6 +261,54 @@ class HomeStatsViewModel @Inject constructor(
             pendingPct = pendingPct,
             overduePct = overduePct
         )
+    }
+
+    private fun rangesOverlap(startA: Long, endA: Long, startB: Long, endB: Long): Boolean {
+        return startA <= endB && endA >= startB
+    }
+
+    private fun sumGoalDelta(
+        goalDeltaByGoalAndDay: Map<String, Map<Long, Int>>,
+        goalId: String,
+        startDay: Long,
+        endDay: Long
+    ): Int {
+        if (startDay > endDay) return 0
+        val dayMap = goalDeltaByGoalAndDay[goalId] ?: return 0
+        var sum = 0
+        for (day in startDay..endDay) {
+            sum += dayMap[day] ?: 0
+        }
+        return sum
+    }
+
+    private fun expectedOccurrences(periodicity: GoalPeriodicity, startDay: Long, endDay: Long): Int {
+        if (startDay > endDay) return 0
+        val start = LocalDate.ofEpochDay(startDay)
+        val end = LocalDate.ofEpochDay(endDay)
+
+        return when (periodicity) {
+            GoalPeriodicity.DAILY -> (ChronoUnit.DAYS.between(start, end) + 1L).toInt()
+            GoalPeriodicity.WEEKLY -> {
+                val daysInclusive = (ChronoUnit.DAYS.between(start, end) + 1L).coerceAtLeast(0)
+                if (daysInclusive == 0L) {
+                    0
+                } else {
+                    kotlin.math.ceil(daysInclusive / 7.0).toInt()
+                }
+            }
+            GoalPeriodicity.MONTHLY -> {
+                val startMonth = YearMonth.from(start)
+                val endMonth = YearMonth.from(end)
+                (ChronoUnit.MONTHS.between(startMonth, endMonth) + 1L).toInt()
+            }
+            GoalPeriodicity.SEMESTRAL -> {
+                val startIndex = start.year * 2 + if (start.monthValue <= 6) 0 else 1
+                val endIndex = end.year * 2 + if (end.monthValue <= 6) 0 else 1
+                (endIndex - startIndex + 1).coerceAtLeast(1)
+            }
+            GoalPeriodicity.ANNUAL -> (end.year - start.year + 1).coerceAtLeast(1)
+        }
     }
 
     private fun computePercents(

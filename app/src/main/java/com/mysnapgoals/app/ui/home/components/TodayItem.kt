@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.mysnapgoals.app.R
+import androidx.compose.ui.res.stringResource
 import com.mysnapgoals.app.domain.model.GoalPeriodicity
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
@@ -80,7 +81,7 @@ fun TodayItem(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_checkbox_checked),
-                        contentDescription = "Completado",
+                        contentDescription = stringResource(R.string.content_desc_completed),
                         tint = onContainer.copy(alpha = 0.70f),
                         modifier = Modifier.size(22.dp)
                     )
@@ -92,7 +93,7 @@ fun TodayItem(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_checkbox_outline),
-                        contentDescription = "Pendiente",
+                        contentDescription = stringResource(R.string.content_desc_pending),
                         tint = onContainer.copy(alpha = 0.55f),
                         modifier = Modifier.size(22.dp)
                     )
@@ -146,7 +147,7 @@ fun TodayItem(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_remove),
-                            contentDescription = "Reducir",
+                            contentDescription = stringResource(R.string.content_desc_decrement),
                             tint = onContainer
                         )
                     }
@@ -162,7 +163,7 @@ fun TodayItem(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_add),
-                            contentDescription = "Incrementar",
+                            contentDescription = stringResource(R.string.content_desc_increment),
                             tint = onContainer
                         )
                     }

@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -164,12 +165,12 @@ private fun SettingsMenu(
             ) {
                 IconButton(onClick = onClose) {
                     Icon(
-                        imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = "Volver"
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.content_desc_back)
                     )
                 }
                 Text(
-                    text = "Configuracion",
+                    text = stringResource(R.string.settings_title),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -178,7 +179,7 @@ private fun SettingsMenu(
 
         item {
             Button3D(
-                text = "Pomodoro",
+                text = stringResource(R.string.settings_pomodoro),
                 onClick = onShowPomodoro,
                 modifier = Modifier.fillMaxWidth(),
                 height = 48.dp,
@@ -187,7 +188,7 @@ private fun SettingsMenu(
         }
         item {
             Button3D(
-                text = "Perfil",
+                text = stringResource(R.string.settings_profile),
                 onClick = onShowProfile,
                 modifier = Modifier.fillMaxWidth(),
                 height = 48.dp,
@@ -196,7 +197,7 @@ private fun SettingsMenu(
         }
         item {
             Button3D(
-                text = "Tema",
+                text = stringResource(R.string.settings_theme),
                 onClick = onShowTheme,
                 modifier = Modifier.fillMaxWidth(),
                 height = 48.dp,
@@ -241,45 +242,45 @@ private fun PomodoroSettingsContent(
             ) {
                 IconButton(onClick = onBack) {
                     Icon(
-                        imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = "Volver"
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.content_desc_back)
                     )
                 }
                 Text(
-                    text = "Pomodoro",
+                    text = stringResource(R.string.settings_pomodoro),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold
                 )
             }
         }
 
-        item { SectionTitle("Comportamiento") }
+        item { SectionTitle(stringResource(R.string.settings_behavior)) }
         item {
             SwitchRow(
-                label = "Auto-iniciar descanso",
+                label = stringResource(R.string.settings_auto_start_breaks),
                 checked = settings.autoStartBreaks,
                 onCheckedChange = onUpdateAutoStartBreaks
             )
         }
         item {
             SwitchRow(
-                label = "Auto-iniciar siguiente pomodoro",
+                label = stringResource(R.string.settings_auto_start_work),
                 checked = settings.autoStartWork,
                 onCheckedChange = onUpdateAutoStartWork
             )
         }
         item {
             SwitchRow(
-                label = "Pausar al salir",
+                label = stringResource(R.string.settings_pause_on_exit),
                 checked = settings.pauseOnExit,
                 onCheckedChange = onUpdatePauseOnExit
             )
         }
 
-        item { SectionTitle("Sonido / vibracion") }
+        item { SectionTitle(stringResource(R.string.settings_sound_vibration)) }
         item {
             SwitchRow(
-                label = "Alarma al terminar",
+                label = stringResource(R.string.settings_alarm),
                 checked = settings.alarmEnabled,
                 onCheckedChange = onUpdateAlarmEnabled
             )
@@ -287,7 +288,7 @@ private fun PomodoroSettingsContent(
         item {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Volumen ${settings.alarmVolumePercent}%",
+                    text = stringResource(R.string.settings_volume, settings.alarmVolumePercent),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -302,23 +303,23 @@ private fun PomodoroSettingsContent(
         }
         item {
             SwitchRow(
-                label = "Vibracion",
+                label = stringResource(R.string.settings_vibration),
                 checked = settings.vibrationEnabled,
                 onCheckedChange = onUpdateVibrationEnabled
             )
         }
 
-        item { SectionTitle("Notificaciones") }
+        item { SectionTitle(stringResource(R.string.settings_notifications)) }
         item {
             SwitchRow(
-                label = "Mantener timer en notificacion",
+                label = stringResource(R.string.settings_keep_notification),
                 checked = settings.keepNotification,
                 onCheckedChange = onUpdateKeepNotification
             )
         }
         item {
             Text(
-                text = "Incluye accion de pausar/reanudar desde la notificacion.",
+                text = stringResource(R.string.settings_notification_hint),
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -354,12 +355,12 @@ private fun ProfileSettingsContent(
             ) {
                 IconButton(onClick = onBack) {
                     Icon(
-                        imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = "Volver"
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.content_desc_back)
                     )
                 }
                 Text(
-                    text = "Perfil",
+                    text = stringResource(R.string.settings_profile),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -416,12 +417,12 @@ private fun ThemeSettingsContent(
             ) {
                 IconButton(onClick = onBack) {
                     Icon(
-                        imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = "Volver"
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.content_desc_back)
                     )
                 }
                 Text(
-                    text = "Tema",
+                    text = stringResource(R.string.settings_theme),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -430,28 +431,28 @@ private fun ThemeSettingsContent(
 
         item {
             ThemeOptionRow(
-                label = "Claro",
+                label = stringResource(R.string.settings_theme_light),
                 selected = selectedTheme == AppTheme.LIGHT,
                 onClick = { onSelectTheme(AppTheme.LIGHT) }
             )
         }
         item {
             ThemeOptionRow(
-                label = "Oscuro",
+                label = stringResource(R.string.settings_theme_dark),
                 selected = selectedTheme == AppTheme.DARK,
                 onClick = { onSelectTheme(AppTheme.DARK) }
             )
         }
         item {
             ThemeOptionRow(
-                label = "Rosado",
+                label = stringResource(R.string.settings_theme_pink),
                 selected = selectedTheme == AppTheme.PINK,
                 onClick = { onSelectTheme(AppTheme.PINK) }
             )
         }
         item {
             ThemeOptionRow(
-                label = "Cafe",
+                label = stringResource(R.string.settings_theme_coffee),
                 selected = selectedTheme == AppTheme.COFFEE,
                 onClick = { onSelectTheme(AppTheme.COFFEE) }
             )
@@ -504,7 +505,7 @@ private fun AvatarOption(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Check,
-                    contentDescription = "Seleccionado",
+                    contentDescription = stringResource(R.string.content_desc_selected),
                     tint = Color.White,
                     modifier = Modifier.align(Alignment.Center)
                 )
@@ -540,7 +541,7 @@ private fun ThemeOptionRow(
         if (selected) {
             Icon(
                 imageVector = Icons.Filled.Check,
-                contentDescription = "Seleccionado",
+                contentDescription = stringResource(R.string.content_desc_selected),
                 tint = MaterialTheme.colorScheme.primary
             )
         }

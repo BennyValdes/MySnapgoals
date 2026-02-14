@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.mysnapgoals.app.ui.components.Button3D
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 import androidx.compose.ui.platform.LocalContext
@@ -34,6 +35,7 @@ import com.mysnapgoals.app.pomodoro.PomodoroController
 import com.mysnapgoals.app.pomodoro.PomodoroPhase
 import com.mysnapgoals.app.settings.PomodoroSettings
 import com.mysnapgoals.app.settings.SettingsRepository
+import com.mysnapgoals.app.R
 import kotlinx.coroutines.launch
 
 private const val POMODORO_MIN_SECONDS = 5 * 60
@@ -72,15 +74,15 @@ fun PomodoroScreen(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "Pomodoro",
+                    text = stringResource(R.string.pomodoro_title),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = when (pomodoroState.phase) {
-                        PomodoroPhase.WORK -> "Trabajo"
-                        PomodoroPhase.SHORT_BREAK -> "Descanso corto"
-                        PomodoroPhase.LONG_BREAK -> "Descanso largo"
+                        PomodoroPhase.WORK -> stringResource(R.string.pomodoro_phase_work)
+                        PomodoroPhase.SHORT_BREAK -> stringResource(R.string.pomodoro_phase_short_break)
+                        PomodoroPhase.LONG_BREAK -> stringResource(R.string.pomodoro_phase_long_break)
                     },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
@@ -93,7 +95,7 @@ fun PomodoroScreen(
                     modifier = Modifier.padding(top = 16.dp)
                 )
                 Text(
-                    text = "Tiempo de trabajo ${pomodoroState.totalSeconds / 60} min",
+                    text = stringResource(R.string.pomodoro_work_time, pomodoroState.totalSeconds / 60),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(top = 16.dp)
@@ -130,7 +132,7 @@ fun PomodoroScreen(
                         depth = 3.dp
                     )
                     Text(
-                        text = "${pomodoroState.totalSeconds / 60} min",
+                        text = stringResource(R.string.pomodoro_minutes, pomodoroState.totalSeconds / 60),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.weight(1f),
@@ -181,7 +183,7 @@ fun PomodoroScreen(
                         )
                     }
                 }
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .padding(top = 16.dp)
                         .fillMaxWidth(),
@@ -189,13 +191,13 @@ fun PomodoroScreen(
                     thickness = 1.dp
                 )
                 Text(
-                    text = "Descansos",
+                    text = stringResource(R.string.pomodoro_breaks_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(top = 12.dp)
                 )
                 Text(
-                    text = "Tiempo descanso corto ${settings.shortBreakSeconds / 60} min",
+                    text = stringResource(R.string.pomodoro_short_break, settings.shortBreakSeconds / 60),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(top = 10.dp)
@@ -233,7 +235,7 @@ fun PomodoroScreen(
                     )
                 }
                 Text(
-                    text = "Tiempo descanso largo ${settings.longBreakSeconds / 60} min",
+                    text = stringResource(R.string.pomodoro_long_break, settings.longBreakSeconds / 60),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(top = 10.dp)
@@ -271,7 +273,7 @@ fun PomodoroScreen(
                     )
                 }
                 Text(
-                    text = "Descanso cada ${settings.longBreakEvery} ciclos",
+                    text = stringResource(R.string.pomodoro_long_break_every, settings.longBreakEvery),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(top = 10.dp)
@@ -319,7 +321,11 @@ fun PomodoroScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Button3D(
-                        text = if (pomodoroState.isRunning) "Detener" else "Iniciar",
+                        text = if (pomodoroState.isRunning) {
+                            stringResource(R.string.pomodoro_stop)
+                        } else {
+                            stringResource(R.string.pomodoro_start)
+                        },
                         onClick = {
                             if (settings.keepNotification && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                 val granted = ContextCompat.checkSelfPermission(
@@ -338,7 +344,7 @@ fun PomodoroScreen(
                         depth = 4.dp
                     )
                     Button3D(
-                        text = "Reiniciar",
+                        text = stringResource(R.string.pomodoro_reset),
                         onClick = {
                             PomodoroController.reset(context)
                         },
@@ -349,7 +355,7 @@ fun PomodoroScreen(
                 }
 
                 Button3D(
-                    text = "Volver",
+                    text = stringResource(R.string.common_back),
                     onClick = {
                         if (settings.pauseOnExit && pomodoroState.isRunning) {
                             PomodoroController.pause(context)

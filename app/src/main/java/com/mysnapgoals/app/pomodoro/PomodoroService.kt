@@ -10,7 +10,6 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
 import android.os.IBinder
-import android.content.pm.ServiceInfo
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.core.app.NotificationCompat
@@ -21,10 +20,12 @@ import com.mysnapgoals.app.settings.PomodoroSettings
 import com.mysnapgoals.app.settings.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class PomodoroService : Service() {
@@ -33,7 +34,7 @@ class PomodoroService : Service() {
 
     private var settings: PomodoroSettings = PomodoroSettings()
     private var state: PomodoroState = PomodoroState()
-    private var tickJobActive = false
+    private var tickerJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -42,6 +43,7 @@ class PomodoroService : Service() {
         serviceScope.launch {
             settingsRepository.settingsFlow.collect { latest ->
                 settings = latest
+                maybeStopService()
             }
         }
     }
@@ -77,26 +79,26 @@ class PomodoroService : Service() {
                 }
             }
 
-            if (!tickJobActive) {
-                startTicker()
-            } else {
-                syncState()
-            }
+            startTickerIfNeeded()
+            syncState()
+            maybeStopService()
         }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        tickerJob?.cancel()
+        tickerJob = null
         serviceScope.cancel()
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun startTicker() {
-        tickJobActive = true
-        serviceScope.launch {
-            while (true) {
+    private fun startTickerIfNeeded() {
+        if (tickerJob?.isActive == true) return
+        tickerJob = serviceScope.launch {
+            while (isActive) {
                 if (state.isRunning) {
                     val nextRemaining = state.remainingSeconds - 1
                     if (nextRemaining <= 0) {
@@ -106,6 +108,7 @@ class PomodoroService : Service() {
                     }
                 }
                 syncState()
+                maybeStopService()
                 delay(1_000)
             }
         }
@@ -120,23 +123,23 @@ class PomodoroService : Service() {
         }
 
         when (state.phase) {
-                PomodoroPhase.WORK -> {
-                    val completed = state.completedPomodoros + 1
-                    val nextPhase =
-                        if (completed % settings.longBreakEvery == 0) {
-                            PomodoroPhase.LONG_BREAK
-                        } else {
-                            PomodoroPhase.SHORT_BREAK
-                        }
-                    val nextRemaining =
-                        if (nextPhase == PomodoroPhase.LONG_BREAK) {
-                            settings.longBreakSeconds
-                        } else {
-                            settings.shortBreakSeconds
-                        }
-                    state = state.copy(
-                        phase = nextPhase,
-                        completedPomodoros = completed,
+            PomodoroPhase.WORK -> {
+                val completed = state.completedPomodoros + 1
+                val nextPhase =
+                    if (completed % settings.longBreakEvery == 0) {
+                        PomodoroPhase.LONG_BREAK
+                    } else {
+                        PomodoroPhase.SHORT_BREAK
+                    }
+                val nextRemaining =
+                    if (nextPhase == PomodoroPhase.LONG_BREAK) {
+                        settings.longBreakSeconds
+                    } else {
+                        settings.shortBreakSeconds
+                    }
+                state = state.copy(
+                    phase = nextPhase,
+                    completedPomodoros = completed,
                     remainingSeconds = nextRemaining,
                     isRunning = settings.autoStartBreaks
                 )
@@ -157,34 +160,40 @@ class PomodoroService : Service() {
         updateNotification()
     }
 
+    private fun maybeStopService() {
+        if (!settings.keepNotification && !state.isRunning) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        }
+    }
+
     private fun updateNotification() {
         if (!settings.keepNotification) {
             stopForeground(STOP_FOREGROUND_REMOVE)
             return
         }
         val notification = buildNotification()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
+        startForeground(NOTIFICATION_ID, notification)
     }
 
     private fun buildNotification(): Notification {
-        val title = "Pomodoro"
         val phaseText =
             when (state.phase) {
-                PomodoroPhase.WORK -> "Trabajo"
-                PomodoroPhase.SHORT_BREAK -> "Descanso corto"
-                PomodoroPhase.LONG_BREAK -> "Descanso largo"
+                PomodoroPhase.WORK -> getString(R.string.pomodoro_phase_work)
+                PomodoroPhase.SHORT_BREAK -> getString(R.string.pomodoro_phase_short_break)
+                PomodoroPhase.LONG_BREAK -> getString(R.string.pomodoro_phase_long_break)
             }
-        val content = "$phaseText • ${formatSeconds(state.remainingSeconds)}"
+        val content = getString(
+            R.string.pomodoro_notification_content,
+            phaseText,
+            formatSeconds(state.remainingSeconds)
+        )
 
-        val toggleAction = if (state.isRunning) "Pausar" else "Reanudar"
+        val toggleAction = if (state.isRunning) {
+            getString(R.string.pomodoro_action_pause)
+        } else {
+            getString(R.string.pomodoro_action_resume)
+        }
         val toggleIntent = pendingServiceIntent(ACTION_TOGGLE)
 
         val openIntent = PendingIntent.getActivity(
@@ -196,7 +205,7 @@ class PomodoroService : Service() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_add)
-            .setContentTitle(title)
+            .setContentTitle(getString(R.string.pomodoro_title))
             .setContentText(content)
             .setContentIntent(openIntent)
             .setOngoing(state.isRunning)
@@ -218,7 +227,7 @@ class PomodoroService : Service() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Pomodoro",
+            getString(R.string.pomodoro_title),
             NotificationManager.IMPORTANCE_LOW
         )
         val manager = getSystemService<NotificationManager>()

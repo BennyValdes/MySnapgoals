@@ -15,6 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.mysnapgoals.app.R
 import com.mysnapgoals.app.ui.components.Button3D
 import com.mysnapgoals.app.ui.components.Panel3D
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
@@ -58,7 +60,7 @@ fun CalendarBanner(
                 contentAlignment = Alignment.Center
             ) {
                 Button3D(
-                    text = "Pomodoro",
+                    text = stringResource(R.string.calendar_pomodoro),
                     onClick = onPomodoroClick,
                     height = 38.dp,
                     depth = 3.dp

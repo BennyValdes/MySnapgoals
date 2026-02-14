@@ -1,3 +1,110 @@
 <resources>
     <string name="app_name">mySnapgoals</string>
+    <string name="common_ok">Aceptar</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_save">Guardar</string>
+    <string name="common_continue">Continuar</string>
+    <string name="common_back">Volver</string>
+    <string name="common_calendar">Calendario</string>
+    <string name="common_title">Titulo</string>
+    <string name="common_no_items">No hay elementos para mostrar.</string>
+    <string name="common_selected">Seleccionado</string>
+
+    <string name="home_today_title">Hoy</string>
+    <string name="home_today_empty">No tienes nada pendiente hoy.</string>
+    <string name="home_total_title">Todo</string>
+    <string name="home_due_date">Fecha limite: %1$s</string>
+    <string name="home_due_date_today">Hoy</string>
+    <string name="home_due_date_none">Sin fecha</string>
+    <string name="home_snackbar_goal_removed">Objetivo removido de Hoy</string>
+    <string name="home_snackbar_todo_removed">ToDo removido de Hoy</string>
+    <string name="home_snackbar_goal_reopened">Objetivo reabierto</string>
+    <string name="home_snackbar_todo_reopened">ToDo reabierto</string>
+    <string name="home_action_undo">Deshacer</string>
+
+    <string name="add_goal_title">Agregar Objetivo</string>
+    <string name="add_todo_title">Agregar ToDo</string>
+    <string name="edit_goal_title">Editar Objetivo</string>
+    <string name="edit_todo_title">Editar ToDo</string>
+    <string name="title_error">El titulo no puede estar vacio</string>
+    <string name="periodicity_title">Periodicidad</string>
+    <string name="periodicity_daily">Diario</string>
+    <string name="periodicity_weekly">Semanal</string>
+    <string name="periodicity_monthly">Mensual</string>
+    <string name="periodicity_semester">Semestral</string>
+    <string name="periodicity_annual">Anual</string>
+    <string name="date_confirm_title">Confirmar fecha limite</string>
+    <string name="date_confirm_body">No seleccionaste una fecha limite. Se asignara automaticamente segun la periodicidad. Deseas continuar?</string>
+    <string name="add_goal_button">Agregar objetivo</string>
+    <string name="add_todo_button">Agregar ToDo</string>
+
+    <string name="filter_title">Filtros</string>
+    <string name="filter_type_title">Tipo</string>
+    <string name="filter_type_all">Todos</string>
+    <string name="filter_type_todos">ToDos</string>
+    <string name="filter_type_goals">Objetivos</string>
+    <string name="filter_sort_title">Orden</string>
+    <string name="filter_sort_recent">Recientes</string>
+    <string name="filter_sort_alpha">A-Z</string>
+    <string name="filter_done_only">Solo completados</string>
+    <string name="filter_clear">Limpiar</string>
+    <string name="filter_apply">Aplicar</string>
+    <string name="filter_search_label">Buscar</string>
+    <string name="filter_content_desc">Filtros</string>
+
+    <string name="settings_title">Configuracion</string>
+    <string name="settings_pomodoro">Pomodoro</string>
+    <string name="settings_profile">Perfil</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_behavior">Comportamiento</string>
+    <string name="settings_auto_start_breaks">Auto-iniciar descanso</string>
+    <string name="settings_auto_start_work">Auto-iniciar siguiente pomodoro</string>
+    <string name="settings_pause_on_exit">Pausar al salir</string>
+    <string name="settings_sound_vibration">Sonido / vibracion</string>
+    <string name="settings_alarm">Alarma al terminar</string>
+    <string name="settings_volume">Volumen %1$d%%</string>
+    <string name="settings_vibration">Vibracion</string>
+    <string name="settings_notifications">Notificaciones</string>
+    <string name="settings_keep_notification">Mantener timer en notificacion</string>
+    <string name="settings_notification_hint">Incluye accion de pausar/reanudar desde la notificacion.</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_dark">Oscuro</string>
+    <string name="settings_theme_pink">Rosado</string>
+    <string name="settings_theme_coffee">Cafe</string>
+
+    <string name="pomodoro_title">Pomodoro</string>
+    <string name="pomodoro_phase_work">Trabajo</string>
+    <string name="pomodoro_phase_short_break">Descanso corto</string>
+    <string name="pomodoro_phase_long_break">Descanso largo</string>
+    <string name="pomodoro_work_time">Tiempo de trabajo %1$d min</string>
+    <string name="pomodoro_breaks_title">Descansos</string>
+    <string name="pomodoro_short_break">Tiempo descanso corto %1$d min</string>
+    <string name="pomodoro_long_break">Tiempo descanso largo %1$d min</string>
+    <string name="pomodoro_long_break_every">Descanso cada %1$d ciclos</string>
+    <string name="pomodoro_minutes">%1$d min</string>
+    <string name="pomodoro_start">Iniciar</string>
+    <string name="pomodoro_stop">Detener</string>
+    <string name="pomodoro_reset">Reiniciar</string>
+    <string name="pomodoro_action_pause">Pausar</string>
+    <string name="pomodoro_action_resume">Reanudar</string>
+    <string name="pomodoro_notification_content">%1$s • %2$s</string>
+
+    <string name="calendar_pomodoro">Pomodoro</string>
+
+    <string name="percentage_day">Dia</string>
+    <string name="percentage_week">Sem</string>
+    <string name="percentage_month">Mes</string>
+    <string name="percentage_year">Año</string>
+    <string name="percentage_tooltip">Completados: %1$d (%2$d%%)\nPendientes: %3$d (%4$d%%)\nNo completados: %5$d (%6$d%%)</string>
+
+    <string name="content_desc_back">Volver</string>
+    <string name="content_desc_selected">Seleccionado</string>
+    <string name="content_desc_menu">Menu</string>
+    <string name="content_desc_profile">Perfil</string>
+    <string name="content_desc_add_goal">Agregar objetivo</string>
+    <string name="content_desc_add_todo">Agregar ToDo</string>
+    <string name="content_desc_completed">Completado</string>
+    <string name="content_desc_pending">Pendiente</string>
+    <string name="content_desc_decrement">Reducir</string>
+    <string name="content_desc_increment">Incrementar</string>
 </resources>

@@ -19,6 +19,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.mysnapgoals.app.R
 import com.mysnapgoals.app.ui.components.Button3D
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
 
@@ -44,10 +46,10 @@ fun AddLine(
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
-                contentDescription = "Agregar objetivo"
+                contentDescription = stringResource(R.string.content_desc_add_goal)
             )
             Text(
-                text = "Agregar Objetivo",
+                text = stringResource(R.string.add_goal_button),
                 modifier = Modifier.padding(start = 8.dp),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
@@ -65,10 +67,10 @@ fun AddLine(
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
-                contentDescription = "Agregar ToDo"
+                contentDescription = stringResource(R.string.content_desc_add_todo)
             )
             Text(
-                text = "Agregar ToDo",
+                text = stringResource(R.string.add_todo_button),
                 modifier = Modifier.padding(start = 8.dp),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,

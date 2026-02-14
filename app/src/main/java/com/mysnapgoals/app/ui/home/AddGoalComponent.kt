@@ -28,8 +28,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mysnapgoals.app.R
 import com.mysnapgoals.app.domain.model.GoalPeriodicity
 import com.mysnapgoals.app.ui.components.Button3D
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
@@ -37,6 +39,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,7 +61,9 @@ fun AddGoalComponent(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val zoneId = remember { ZoneId.systemDefault() }
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("yyyy/MM/dd") }
+    val dateFormatter = remember {
+        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
+    }
     val initialDateMillis =
         remember {
             LocalDate.now()
@@ -86,10 +92,10 @@ fun AddGoalComponent(
                         selectedDueDateMillis = datePickerState.selectedDateMillis
                         showDatePicker = false
                     }
-                ) { Text("Aceptar") }
+                ) { Text(stringResource(R.string.common_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -99,8 +105,8 @@ fun AddGoalComponent(
     if (showDefaultDueConfirm) {
         AlertDialog(
             onDismissRequest = { showDefaultDueConfirm = false },
-            title = { Text("Confirmar fecha limite") },
-            text = { Text("No seleccionaste una fecha limite. Se asignara 1 mes a partir de hoy. Deseas continuar?") },
+            title = { Text(stringResource(R.string.date_confirm_title)) },
+            text = { Text(stringResource(R.string.date_confirm_body)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -110,15 +116,15 @@ fun AddGoalComponent(
                             showDefaultDueConfirm = false
                             return@TextButton
                         }
-                        val dueDay = LocalDate.now().plusMonths(1).toEpochDay()
+                        val dueDay = defaultDueDay(periodicity)
                         focusManager.clearFocus()
                         showDefaultDueConfirm = false
                         onConfirm(trimmedTitle, periodicity, dueDay)
                     }
-                ) { Text("Continuar") }
+                ) { Text(stringResource(R.string.common_continue)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDefaultDueConfirm = false }) { Text("Cancelar") }
+                TextButton(onClick = { showDefaultDueConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -128,7 +134,7 @@ fun AddGoalComponent(
             focusManager.clearFocus()
             onDismiss()
         },
-        title = { Text("Agregar Objetivo") },
+        title = { Text(stringResource(R.string.add_goal_title)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -142,24 +148,24 @@ fun AddGoalComponent(
                         .focusRequester(titleFocusRequester),
                     singleLine = true,
                     isError = titleError,
-                    label = { Text("Titulo") },
-                    supportingText = { if (titleError) Text("El titulo no puede estar vacio") }
+                    label = { Text(stringResource(R.string.common_title)) },
+                    supportingText = { if (titleError) Text(stringResource(R.string.title_error)) }
                 )
 
-                Text("Periodicidad")
-                PeriodicityRadioRow("Diario", periodicity == GoalPeriodicity.DAILY) {
+                Text(stringResource(R.string.periodicity_title))
+                PeriodicityRadioRow(stringResource(R.string.periodicity_daily), periodicity == GoalPeriodicity.DAILY) {
                     periodicity = GoalPeriodicity.DAILY
                 }
-                PeriodicityRadioRow("Semanal", periodicity == GoalPeriodicity.WEEKLY) {
+                PeriodicityRadioRow(stringResource(R.string.periodicity_weekly), periodicity == GoalPeriodicity.WEEKLY) {
                     periodicity = GoalPeriodicity.WEEKLY
                 }
-                PeriodicityRadioRow("Mensual", periodicity == GoalPeriodicity.MONTHLY) {
+                PeriodicityRadioRow(stringResource(R.string.periodicity_monthly), periodicity == GoalPeriodicity.MONTHLY) {
                     periodicity = GoalPeriodicity.MONTHLY
                 }
-                PeriodicityRadioRow("Semestral", periodicity == GoalPeriodicity.SEMESTRAL) {
+                PeriodicityRadioRow(stringResource(R.string.periodicity_semester), periodicity == GoalPeriodicity.SEMESTRAL) {
                     periodicity = GoalPeriodicity.SEMESTRAL
                 }
-                PeriodicityRadioRow("Anual", periodicity == GoalPeriodicity.ANNUAL) {
+                PeriodicityRadioRow(stringResource(R.string.periodicity_annual), periodicity == GoalPeriodicity.ANNUAL) {
                     periodicity = GoalPeriodicity.ANNUAL
                 }
 
@@ -172,15 +178,15 @@ fun AddGoalComponent(
                         selectedDueDateMillis?.let { millis ->
                             val date = Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate()
                             date.format(dateFormatter)
-                        } ?: "Sin fecha"
+                        } ?: stringResource(R.string.home_due_date_none)
 
-                    Text(text = "Fecha limite: $dateText")
+                    Text(text = stringResource(R.string.home_due_date, dateText))
                     Spacer(modifier = Modifier.weight(1f))
                     Button3D(
                         onClick = { showDatePicker = true },
                         height = 36.dp,
                         depth = 3.dp
-                    ) { Text("Calendario") }
+                    ) { Text(stringResource(R.string.common_calendar)) }
                 }
             }
         },
@@ -199,7 +205,7 @@ fun AddGoalComponent(
                     modifier = Modifier.weight(1f),
                     height = 44.dp,
                     depth = 4.dp
-                ) { Text("Cancelar") }
+                ) { Text(stringResource(R.string.common_cancel)) }
 
                 Button3D(
                     onClick = {
@@ -211,7 +217,7 @@ fun AddGoalComponent(
                         val dueDay =
                             selectedDueDateMillis?.let { millis ->
                                 Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate().toEpochDay()
-                            }
+                            }?.coerceAtLeast(LocalDate.now().toEpochDay())
 
                         if (dueDay == null) {
                             showDefaultDueConfirm = true
@@ -224,7 +230,7 @@ fun AddGoalComponent(
                     modifier = Modifier.weight(1f),
                     height = 44.dp,
                     depth = 4.dp
-                ) { Text("Guardar") }
+                ) { Text(stringResource(R.string.common_save)) }
             }
         }
     )
@@ -246,6 +252,17 @@ private fun PeriodicityRadioRow(
     ) {
         Text(label)
         RadioButton(selected = selected, onClick = onClick)
+    }
+}
+
+private fun defaultDueDay(periodicity: GoalPeriodicity): Long {
+    val today = LocalDate.now()
+    return when (periodicity) {
+        GoalPeriodicity.DAILY -> today.plusDays(1).toEpochDay()
+        GoalPeriodicity.WEEKLY -> today.plusWeeks(1).toEpochDay()
+        GoalPeriodicity.MONTHLY -> today.plusMonths(1).toEpochDay()
+        GoalPeriodicity.SEMESTRAL -> today.plusMonths(6).toEpochDay()
+        GoalPeriodicity.ANNUAL -> today.plusYears(1).toEpochDay()
     }
 }
 
