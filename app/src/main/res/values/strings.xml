@@ -56,6 +56,7 @@
     <string name="settings_pomodoro">Pomodoro</string>
     <string name="settings_profile">Perfil</string>
     <string name="settings_theme">Tema</string>
+    <string name="settings_privacy_policy">Politica de privacidad</string>
     <string name="settings_behavior">Comportamiento</string>
     <string name="settings_auto_start_breaks">Auto-iniciar descanso</string>
     <string name="settings_auto_start_work">Auto-iniciar siguiente pomodoro</string>

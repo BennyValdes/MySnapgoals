@@ -71,13 +71,15 @@ fun SettingsScreen(
     var showPomodoroSettings by remember { mutableStateOf(false) }
     var showProfileSettings by remember { mutableStateOf(false) }
     var showThemeSettings by remember { mutableStateOf(false) }
+    var showPrivacyPolicy by remember { mutableStateOf(false) }
 
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        BackHandler(enabled = showPomodoroSettings || showProfileSettings || showThemeSettings) {
+        BackHandler(enabled = showPomodoroSettings || showProfileSettings || showThemeSettings || showPrivacyPolicy) {
             when {
+                showPrivacyPolicy -> showPrivacyPolicy = false
                 showProfileSettings -> showProfileSettings = false
                 showPomodoroSettings -> showPomodoroSettings = false
                 showThemeSettings -> showThemeSettings = false
@@ -129,11 +131,16 @@ fun SettingsScreen(
                     scope.launch { settingsRepository.setAppTheme(theme) }
                 }
             )
+        } else if (showPrivacyPolicy) {
+            PrivacyPolicyContent(
+                onBack = { showPrivacyPolicy = false }
+            )
         } else {
             SettingsMenu(
                 onShowPomodoro = { showPomodoroSettings = true },
                 onShowProfile = { showProfileSettings = true },
                 onShowTheme = { showThemeSettings = true },
+                onShowPrivacyPolicy = { showPrivacyPolicy = true },
                 onClose = onClose
             )
         }
@@ -146,6 +153,7 @@ private fun SettingsMenu(
     onShowPomodoro: () -> Unit,
     onShowProfile: () -> Unit,
     onShowTheme: () -> Unit,
+    onShowPrivacyPolicy: () -> Unit,
     onClose: () -> Unit
 ) {
     LazyColumn(
@@ -202,6 +210,67 @@ private fun SettingsMenu(
                 modifier = Modifier.fillMaxWidth(),
                 height = 48.dp,
                 depth = 4.dp
+            )
+        }
+        item {
+            Button3D(
+                text = stringResource(R.string.settings_privacy_policy),
+                onClick = onShowPrivacyPolicy,
+                modifier = Modifier.fillMaxWidth(),
+                height = 48.dp,
+                depth = 4.dp
+            )
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PrivacyPolicyContent(
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
+    val policyText = remember(context) {
+        context.resources.openRawResource(R.raw.privacy_policy).bufferedReader().use { it.readText() }
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(WindowInsets.systemBars.asPaddingValues())
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        stickyHeader {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.content_desc_back)
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.settings_privacy_policy),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+
+        item {
+            Text(
+                text = policyText,
+                style = MaterialTheme.typography.bodyLarge
             )
         }
 
