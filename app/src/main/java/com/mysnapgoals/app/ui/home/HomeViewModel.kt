@@ -432,9 +432,9 @@ class HomeViewModel @Inject constructor(
 
         seq =
             if (showDoneOnly) {
-                seq.filter { it.isDone }
+                seq.filter { it.isEffectivelyDone() }
             } else {
-                seq.filter { !it.isDone }
+                seq.filter { !it.isEffectivelyDone() }
             }
 
         seq =
@@ -456,6 +456,15 @@ class HomeViewModel @Inject constructor(
             TaskSort.RECENT -> list
             TaskSort.ALPHA -> list.sortedBy { it.title.lowercase() }
         }
+    }
+
+    private fun TodayItemUiModel.isEffectivelyDone(): Boolean {
+        if (isDone) return true
+        if (type != TodayItemType.GOAL) return false
+
+        val currentValue = current ?: return false
+        val targetValue = target ?: return false
+        return targetValue > 0 && currentValue >= targetValue
     }
 
     fun applyFilters(type: TaskFilterType, sortOrder: TaskSort) {
