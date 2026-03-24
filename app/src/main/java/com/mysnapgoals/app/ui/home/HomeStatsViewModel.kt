@@ -6,14 +6,18 @@ import com.mysnapgoals.app.domain.model.GoalPeriodicity
 import com.mysnapgoals.app.domain.model.GoalProgressEvent
 import com.mysnapgoals.app.domain.model.Task
 import com.mysnapgoals.app.domain.model.TaskType
+import com.mysnapgoals.app.domain.util.GoalPeriodMath
+import com.mysnapgoals.app.domain.util.GoalProgressIndex
 import com.mysnapgoals.app.domain.usecase.ObserveGoalProgressEventsUseCase
 import com.mysnapgoals.app.domain.usecase.ObserveTasksUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.DayOfWeek
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.YearMonth
-import java.time.temporal.ChronoUnit
+import java.time.ZonedDateTime
+import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,6 +64,8 @@ class HomeStatsViewModel @Inject constructor(
     private val dayTick = MutableStateFlow(todayEpochDay())
 
     init {
+        startDayTicker()
+
         viewModelScope.launch {
             combine(
                 observeTasks(),
@@ -110,12 +116,12 @@ class HomeStatsViewModel @Inject constructor(
         }
     }
 
-    init {
+    private fun startDayTicker() {
         viewModelScope.launch {
             while (true) {
-                val now = java.time.ZonedDateTime.now()
+                val now = ZonedDateTime.now()
                 val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
-                val delayMs = java.time.Duration.between(now, nextMidnight).toMillis().coerceAtLeast(0)
+                val delayMs = Duration.between(now, nextMidnight).toMillis().coerceAtLeast(0)
                 delay(delayMs)
                 dayTick.value = todayEpochDay()
             }
@@ -124,7 +130,7 @@ class HomeStatsViewModel @Inject constructor(
 
     private fun weekRange(todayEpochDay: Long): Pair<Long, Long> {
         val today = LocalDate.ofEpochDay(todayEpochDay)
-        val start = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+        val start = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
         val endExclusive = start.plusDays(7)
         return start.toEpochDay() to endExclusive.toEpochDay()
     }
@@ -175,12 +181,7 @@ class HomeStatsViewModel @Inject constructor(
         var pending = 0
         var overdue = 0
 
-        val goalDeltaByGoalAndDay = events
-            .groupBy { it.goalId }
-            .mapValues { (_, list) ->
-                list.groupBy { it.epochDay }
-                    .mapValues { (_, dayEvents) -> dayEvents.sumOf { it.delta } }
-            }
+        val goalProgressIndex = GoalProgressIndex.from(events)
 
         val todos =
             tasks.filter { it.type == TaskType.TODO }
@@ -215,24 +216,24 @@ class HomeStatsViewModel @Inject constructor(
             val pendingStart = maxOf(effectiveStart, todayEpochDay)
 
             val overdueExpected = if (effectiveStart <= overdueEnd) {
-                expectedOccurrences(periodicity, effectiveStart, overdueEnd)
+                GoalPeriodMath.expectedOccurrences(periodicity, effectiveStart, overdueEnd)
             } else {
                 0
             }
             val pendingExpected = if (pendingStart <= effectiveEnd) {
-                expectedOccurrences(periodicity, pendingStart, effectiveEnd)
+                GoalPeriodMath.expectedOccurrences(periodicity, pendingStart, effectiveEnd)
             } else {
                 0
             }
 
             val overdueProgress = if (effectiveStart <= overdueEnd) {
-                sumGoalDelta(goalDeltaByGoalAndDay, goal.id, effectiveStart, overdueEnd)
+                goalProgressIndex.sum(goal.id, effectiveStart, overdueEnd)
             } else {
                 0
             }.coerceAtLeast(0)
 
             val pendingProgress = if (pendingStart <= effectiveEnd) {
-                sumGoalDelta(goalDeltaByGoalAndDay, goal.id, pendingStart, effectiveEnd)
+                goalProgressIndex.sum(goal.id, pendingStart, effectiveEnd)
             } else {
                 0
             }.coerceAtLeast(0)
@@ -265,50 +266,6 @@ class HomeStatsViewModel @Inject constructor(
 
     private fun rangesOverlap(startA: Long, endA: Long, startB: Long, endB: Long): Boolean {
         return startA <= endB && endA >= startB
-    }
-
-    private fun sumGoalDelta(
-        goalDeltaByGoalAndDay: Map<String, Map<Long, Int>>,
-        goalId: String,
-        startDay: Long,
-        endDay: Long
-    ): Int {
-        if (startDay > endDay) return 0
-        val dayMap = goalDeltaByGoalAndDay[goalId] ?: return 0
-        var sum = 0
-        for (day in startDay..endDay) {
-            sum += dayMap[day] ?: 0
-        }
-        return sum
-    }
-
-    private fun expectedOccurrences(periodicity: GoalPeriodicity, startDay: Long, endDay: Long): Int {
-        if (startDay > endDay) return 0
-        val start = LocalDate.ofEpochDay(startDay)
-        val end = LocalDate.ofEpochDay(endDay)
-
-        return when (periodicity) {
-            GoalPeriodicity.DAILY -> (ChronoUnit.DAYS.between(start, end) + 1L).toInt()
-            GoalPeriodicity.WEEKLY -> {
-                val daysInclusive = (ChronoUnit.DAYS.between(start, end) + 1L).coerceAtLeast(0)
-                if (daysInclusive == 0L) {
-                    0
-                } else {
-                    kotlin.math.ceil(daysInclusive / 7.0).toInt()
-                }
-            }
-            GoalPeriodicity.MONTHLY -> {
-                val startMonth = YearMonth.from(start)
-                val endMonth = YearMonth.from(end)
-                (ChronoUnit.MONTHS.between(startMonth, endMonth) + 1L).toInt()
-            }
-            GoalPeriodicity.SEMESTRAL -> {
-                val startIndex = start.year * 2 + if (start.monthValue <= 6) 0 else 1
-                val endIndex = end.year * 2 + if (end.monthValue <= 6) 0 else 1
-                (endIndex - startIndex + 1).coerceAtLeast(1)
-            }
-            GoalPeriodicity.ANNUAL -> (end.year - start.year + 1).coerceAtLeast(1)
-        }
     }
 
     private fun computePercents(

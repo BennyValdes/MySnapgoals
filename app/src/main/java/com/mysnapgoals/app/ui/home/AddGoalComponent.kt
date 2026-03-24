@@ -35,9 +35,7 @@ import com.mysnapgoals.app.R
 import com.mysnapgoals.app.domain.model.GoalPeriodicity
 import com.mysnapgoals.app.ui.components.Button3D
 import com.mysnapgoals.app.ui.theme.SnapGoalsTheme
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
@@ -60,16 +58,12 @@ fun AddGoalComponent(
     val titleFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    val zoneId = remember { ZoneId.systemDefault() }
     val dateFormatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
     }
     val initialDateMillis =
         remember {
-            LocalDate.now()
-                .atStartOfDay(zoneId)
-                .toInstant()
-                .toEpochMilli()
+            epochDayToPickerMillis(LocalDate.now().toEpochDay())
         }
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDateMillis)
 
@@ -176,7 +170,7 @@ fun AddGoalComponent(
                 ) {
                     val dateText =
                         selectedDueDateMillis?.let { millis ->
-                            val date = Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate()
+                            val date = pickerMillisToLocalDate(millis)
                             date.format(dateFormatter)
                         } ?: stringResource(R.string.home_due_date_none)
 
@@ -216,7 +210,7 @@ fun AddGoalComponent(
 
                         val dueDay =
                             selectedDueDateMillis?.let { millis ->
-                                Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate().toEpochDay()
+                                pickerMillisToEpochDay(millis)
                             }?.coerceAtLeast(LocalDate.now().toEpochDay())
 
                         if (dueDay == null) {

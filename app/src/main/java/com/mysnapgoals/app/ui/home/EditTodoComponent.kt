@@ -29,9 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mysnapgoals.app.R
 import com.mysnapgoals.app.ui.components.Button3D
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
@@ -52,14 +50,12 @@ fun EditTodoComponent(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    val zoneId = remember { ZoneId.systemDefault() }
     val dateFormatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
     }
     val initialDateMillis =
         remember(initialScheduledDay) {
-            val date = LocalDate.ofEpochDay(initialScheduledDay ?: LocalDate.now().toEpochDay())
-            date.atStartOfDay(zoneId).toInstant().toEpochMilli()
+            epochDayToPickerMillis(initialScheduledDay ?: LocalDate.now().toEpochDay())
         }
     var selectedDueDateMillis by remember { mutableStateOf<Long?>(initialDateMillis) }
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDateMillis)
@@ -122,7 +118,7 @@ fun EditTodoComponent(
                 ) {
                     val dateText =
                         selectedDueDateMillis?.let { millis ->
-                            val date = Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate()
+                            val date = pickerMillisToLocalDate(millis)
                             date.format(dateFormatter)
                         } ?: stringResource(R.string.home_due_date_today)
 
@@ -162,7 +158,7 @@ fun EditTodoComponent(
                         }
                         val scheduledDay =
                             selectedDueDateMillis?.let { millis ->
-                                Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate().toEpochDay()
+                                pickerMillisToEpochDay(millis)
                             } ?: LocalDate.now().toEpochDay()
                         focusManager.clearFocus()
                         onConfirm(trimmed, scheduledDay)

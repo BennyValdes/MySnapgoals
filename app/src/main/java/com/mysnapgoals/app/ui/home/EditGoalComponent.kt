@@ -33,9 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.mysnapgoals.app.R
 import com.mysnapgoals.app.domain.model.GoalPeriodicity
 import com.mysnapgoals.app.ui.components.Button3D
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
@@ -60,14 +58,12 @@ fun EditGoalComponent(
     val titleFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    val zoneId = remember { ZoneId.systemDefault() }
     val dateFormatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
     }
     val initialDateMillis =
         remember(initialDueDay) {
-            val date = LocalDate.ofEpochDay(initialDueDay ?: LocalDate.now().toEpochDay())
-            date.atStartOfDay(zoneId).toInstant().toEpochMilli()
+            epochDayToPickerMillis(initialDueDay ?: LocalDate.now().toEpochDay())
         }
     var selectedDueDateMillis by remember(initialDateMillis) { mutableStateOf<Long?>(initialDateMillis) }
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDateMillis)
@@ -174,12 +170,12 @@ fun EditGoalComponent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val dateMillis = selectedDueDateMillis ?: initialDueDay?.let { day ->
-                        LocalDate.ofEpochDay(day).atStartOfDay(zoneId).toInstant().toEpochMilli()
+                        epochDayToPickerMillis(day)
                     }
 
                     val dateText =
                         dateMillis?.let { millis ->
-                            val date = Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate()
+                            val date = pickerMillisToLocalDate(millis)
                             date.format(dateFormatter)
                         } ?: stringResource(R.string.home_due_date_none)
 
@@ -220,7 +216,7 @@ fun EditGoalComponent(
                         val dueMillis = selectedDueDateMillis
                         val dueDay =
                             dueMillis?.let { millis ->
-                                Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate().toEpochDay()
+                                pickerMillisToEpochDay(millis)
                             }?.coerceAtLeast(LocalDate.now().toEpochDay())
 
                         if (dueDay == null) {
